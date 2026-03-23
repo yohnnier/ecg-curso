@@ -1,0 +1,2397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Módulo 1 · ECG Clínico · Atlas Interactivo + IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f3f0e6;--paper2:#eae6d8;--paper3:#ddd8c8;
+  --ink:#111318;--ink2:rgba(17,19,24,.55);--ink3:rgba(17,19,24,.2);
+  --rule:rgba(17,19,24,.07);
+  --lime:#b8e000;--lime-s:rgba(184,224,0,.16);
+  --red:#d93a27;--red-s:rgba(217,58,39,.11);
+  --blue:#1045c8;--blue-s:rgba(16,69,200,.09);
+  --amber:#d97706;--amber-s:rgba(217,119,6,.11);
+  --teal:#0a9080;--teal-s:rgba(10,144,128,.09);
+  --green:#16a34a;--green-s:rgba(22,163,74,.1);
+  --purple:#7c3aed;--purple-s:rgba(124,58,237,.1);
+  --ff-h:'Fraunces',Georgia,serif;
+  --ff-b:'Outfit',sans-serif;
+  --ff-m:'DM Mono',monospace;
+  --r:12px;--r2:20px;--r3:28px;
+  --ecg-bg:#fdf6e3;--ecg-big:#c8a87a;--ecg-sm:#ead8b0;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--ff-b);background:var(--paper);color:var(--ink);min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:repeating-linear-gradient(transparent,transparent 27px,var(--rule) 27px,var(--rule) 28px);opacity:.5;}
+
+/* ── TOPBAR ── */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:200;height:52px;
+  display:flex;align-items:center;gap:12px;padding:0 20px;
+  background:var(--paper);border-bottom:1.5px solid var(--ink3);}
+.tl{font-family:var(--ff-h);font-weight:900;font-size:15px;letter-spacing:-.02em;}
+.tl span{color:var(--red);}
+.tm{font-family:var(--ff-m);font-size:10px;background:var(--ink);color:var(--lime);padding:3px 10px;border-radius:99px;}
+.ts{flex:1;}
+.tdots{display:flex;gap:5px;}
+.tdot{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--ink3);cursor:pointer;transition:all .2s;}
+.tdot.done{background:var(--lime);border-color:var(--lime);}
+.tdot.cur{background:var(--ink);border-color:var(--ink);}
+.pgline{position:fixed;top:52px;left:0;z-index:200;height:3px;
+  background:linear-gradient(90deg,var(--red),var(--lime));transition:width .4s ease;}
+
+/* ── LAYOUT ── */
+.main{max-width:860px;margin:0 auto;padding:72px 20px 100px;position:relative;z-index:1;}
+.slide{display:none;animation:sIn .4s ease both;padding-bottom:40px;}
+.slide.active{display:block;}
+@keyframes sIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+
+/* ── BOTNAV ── */
+.botnav{position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:var(--paper);border-top:1.5px solid var(--ink3);
+  padding:10px 20px;display:flex;align-items:center;justify-content:space-between;}
+.bn-info{font-family:var(--ff-m);font-size:11px;color:var(--ink2);}
+.btn-n{font-family:var(--ff-b);font-size:13px;font-weight:700;border-radius:99px;
+  padding:9px 20px;cursor:pointer;border:none;transition:all .18s;
+  display:inline-flex;align-items:center;gap:8px;}
+.btn-prev{background:var(--paper2);color:var(--ink);}
+.btn-prev:hover{background:var(--paper3);}
+.btn-next{background:var(--ink);color:var(--lime);box-shadow:3px 3px 0 var(--lime);}
+.btn-next:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--lime);}
+.btn-n:disabled{opacity:.3;pointer-events:none;}
+
+/* ── TYPE ── */
+.eyebrow{font-family:var(--ff-m);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);margin-bottom:10px;display:block;}
+.h-hero{font-family:var(--ff-h);font-weight:900;font-size:clamp(38px,7vw,72px);line-height:.93;letter-spacing:-.03em;margin-bottom:16px;}
+.h-hero .red{color:var(--red);}
+.h-hero .ul{position:relative;display:inline-block;}
+.h-hero .ul::after{content:'';position:absolute;bottom:4px;left:-2px;right:-2px;height:7px;background:var(--lime);z-index:-1;}
+.h-big{font-family:var(--ff-h);font-weight:900;font-size:clamp(22px,3.5vw,36px);line-height:1.05;letter-spacing:-.025em;margin-bottom:10px;}
+.h-sec{font-family:var(--ff-h);font-weight:700;font-size:17px;margin-bottom:8px;}
+.lead{font-size:15px;color:var(--ink2);line-height:1.7;max-width:580px;margin-bottom:20px;}
+
+/* ── STEP HEADER ── */
+.step-header{display:flex;align-items:center;gap:12px;background:var(--ink);border-radius:var(--r);padding:10px 16px;margin-bottom:20px;}
+.sh-num{font-family:var(--ff-h);font-size:26px;font-weight:900;color:var(--lime);line-height:1;flex-shrink:0;}
+.sh-tag{font-family:var(--ff-m);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);display:block;margin-bottom:2px;}
+.sh-title{font-size:14px;font-weight:700;color:#fff;line-height:1.3;}
+.sh-obj{margin-left:auto;font-family:var(--ff-m);font-size:9px;background:var(--lime-s);color:var(--lime);border:1px solid rgba(184,224,0,.3);padding:3px 10px;border-radius:99px;white-space:nowrap;flex-shrink:0;}
+
+/* ── ECG PAPER ── */
+.ecg-paper{background:var(--ecg-bg);border:2px solid var(--ecg-big);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:0 4px 12px rgba(0,0,0,.15),2px 2px 0 rgba(200,168,122,.3);}
+.ecg-paper-header{background:var(--ecg-big);padding:6px 14px;display:flex;justify-content:space-between;align-items:center;}
+.ecg-paper-header span{font-family:var(--ff-m);font-size:10px;color:#fff;letter-spacing:.06em;}
+.ecg-svg{width:100%;display:block;}
+
+/* ══════════════════════════════════════════
+   HOTSPOT SYSTEM
+══════════════════════════════════════════ */
+.ecg-hotspot-wrap{
+  position:relative;
+  display:inline-block;
+  width:100%;
+}
+/* Overlay container sitting on top of SVG */
+.hotspot-overlay{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+.hs{
+  position:absolute;
+  pointer-events:all;
+  cursor:pointer;
+}
+/* Pulsing dot */
+.hs-dot{
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;
+  border:2px solid #fff;
+  box-shadow:0 0 0 3px rgba(0,0,0,.15);
+  transition:transform .2s;
+  position:relative;
+  z-index:2;
+  color:#fff;
+  font-family:var(--ff-m);
+}
+.hs-dot::after{
+  content:'';
+  position:absolute;inset:-6px;
+  border-radius:50%;
+  animation:hsPulse 2s ease-in-out infinite;
+}
+@keyframes hsPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.35);}
+  50%{box-shadow:0 0 0 8px rgba(255,255,255,0);}
+}
+.hs:hover .hs-dot{transform:scale(1.2);}
+
+/* Color variants */
+.hs.red    .hs-dot{background:var(--red);border-color:var(--red);}
+.hs.blue   .hs-dot{background:var(--blue);border-color:var(--blue);}
+.hs.amber  .hs-dot{background:var(--amber);border-color:var(--amber);}
+.hs.teal   .hs-dot{background:var(--teal);border-color:var(--teal);}
+.hs.lime   .hs-dot{background:#5a7200;border-color:#5a7200;}
+.hs.purple .hs-dot{background:var(--purple);border-color:var(--purple);}
+.hs.white  .hs-dot{background:#fff;color:var(--ink);}
+
+/* Tooltip */
+.hs-tip{
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;transform:translateX(-50%);
+  background:var(--ink);color:#fff;
+  font-family:var(--ff-m);font-size:11px;
+  padding:8px 14px;border-radius:10px;
+  min-width:160px;max-width:220px;
+  text-align:left;line-height:1.6;
+  opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;
+  transform:translateX(-50%) translateY(4px);
+  z-index:50;
+  white-space:normal;
+}
+.hs-tip::after{
+  content:'';position:absolute;top:100%;left:50%;
+  transform:translateX(-50%);
+  border:6px solid transparent;
+  border-top-color:var(--ink);
+}
+.hs-tip .tip-title{color:var(--lime);font-weight:500;display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;letter-spacing:.07em;}
+.hs-tip .tip-warn{color:#fbbf24;display:block;margin-top:4px;font-size:10px;}
+
+.hs:hover .hs-tip,
+.hs.active .hs-tip{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+
+/* Adjust tip if near left/right edge */
+.hs.tip-right .hs-tip{left:0;transform:translateX(0);}
+.hs.tip-right .hs-tip::after{left:14px;}
+.hs.tip-left .hs-tip{left:auto;right:0;transform:translateX(0);}
+.hs.tip-left .hs-tip::after{left:auto;right:14px;}
+.hs.tip-below .hs-tip{bottom:auto;top:calc(100% + 8px);}
+.hs.tip-below .hs-tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:var(--ink);}
+
+/* Measurement arrow overlay */
+.hs-measure{
+  position:absolute;
+  display:flex;flex-direction:column;align-items:center;
+  pointer-events:none;
+}
+.hs-measure-line{
+  background:var(--blue);height:2px;width:100%;
+  position:relative;
+}
+.hs-measure-line::before,.hs-measure-line::after{
+  content:'';position:absolute;top:50%;
+  border:5px solid transparent;
+  transform:translateY(-50%);
+}
+.hs-measure-line::before{left:0;border-right-color:var(--blue);}
+.hs-measure-line::after{right:0;border-left-color:var(--blue);}
+.hs-measure-val{
+  font-family:var(--ff-m);font-size:9px;
+  background:var(--blue);color:#fff;
+  padding:2px 7px;border-radius:4px;margin-top:3px;
+}
+
+/* Shading rectangles on ECG */
+.ecg-shade{
+  position:absolute;
+  pointer-events:none;
+  border-radius:2px;
+}
+
+/* ── COMPONENTS ── */
+.card{border:1.5px solid var(--ink3);border-radius:var(--r);padding:16px 18px;background:var(--paper2);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--ff-m);font-size:10px;padding:3px 10px;border-radius:99px;border:1.5px solid currentColor;}
+.ch-lime{color:#4d7200;background:var(--lime-s);}
+.ch-red{color:var(--red);background:var(--red-s);}
+.ch-blue{color:var(--blue);background:var(--blue-s);}
+.ch-amber{color:var(--amber);background:var(--amber-s);}
+.ch-teal{color:var(--teal);background:var(--teal-s);}
+.ch-green{color:var(--green);background:var(--green-s);}
+
+.perla{background:var(--ink);color:#fff;border-radius:var(--r2);padding:16px 20px;margin:14px 0;display:flex;gap:12px;align-items:flex-start;}
+.pi{font-size:20px;flex-shrink:0;}
+.pt{font-family:var(--ff-m);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--lime);margin-bottom:4px;display:block;}
+.px{font-size:13px;line-height:1.7;color:rgba(255,255,255,.8);}
+.px strong{color:var(--lime);}
+.alerta{border:2px solid var(--red);border-radius:var(--r);background:var(--red-s);padding:12px 16px;margin:12px 0;display:flex;gap:10px;align-items:flex-start;}
+.ai{font-size:17px;flex-shrink:0;}
+.ab{font-size:12.5px;line-height:1.6;}
+.at{font-family:var(--ff-m);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:3px;display:block;}
+.ojo{border:1.5px solid var(--amber);border-radius:var(--r);background:var(--amber-s);padding:11px 15px;margin:10px 0;display:flex;gap:10px;align-items:flex-start;}
+.ox{font-size:12.5px;line-height:1.6;}
+.ox strong{color:var(--amber);}
+hr{border:none;border-top:1.5px solid var(--rule);margin:22px 0;}
+
+/* ── FLIP CARDS ── */
+.flip-note{text-align:center;font-family:var(--ff-m);font-size:10px;color:var(--ink2);margin-bottom:8px;}
+.flip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin:8px 0 16px;}
+.flip-card{perspective:700px;height:125px;cursor:pointer;user-select:none;}
+.flip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1);}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg);}
+.flip-f,.flip-b{position:absolute;inset:0;border:1.5px solid var(--ink3);border-radius:var(--r);backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;text-align:center;}
+.flip-f{background:var(--paper2);}
+.flip-b{background:var(--ink);color:#fff;transform:rotateY(180deg);}
+.ff-ic{font-size:22px;margin-bottom:4px;}
+.ff-wv{font-family:var(--ff-h);font-size:26px;font-weight:900;color:var(--red);line-height:1;margin-bottom:2px;}
+.ff-nm{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}
+.fb-v{font-family:var(--ff-m);font-size:11px;color:var(--lime);margin-bottom:4px;line-height:1.4;}
+.fb-t{font-size:10px;line-height:1.5;color:rgba(255,255,255,.65);}
+
+/* ── MNEMONIC ── */
+.mnemo{border:2px solid var(--ink);border-radius:var(--r2);overflow:hidden;margin:14px 0;}
+.mn-hd{background:var(--ink);padding:10px 18px;font-family:var(--ff-m);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--lime);}
+.mn-body{padding:0 18px;}
+.mn-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--rule);}
+.mn-row:last-child{border-bottom:none;}
+.mn-L{font-family:var(--ff-h);font-size:32px;font-weight:900;color:var(--red);line-height:1;width:36px;flex-shrink:0;}
+.mn-c{flex:1;}
+.mn-w{font-weight:700;font-size:13px;margin-bottom:2px;}
+.mn-d{font-size:12px;color:var(--ink2);line-height:1.5;}
+.mn-v{display:inline-flex;margin-top:4px;font-family:var(--ff-m);font-size:10px;background:var(--lime-s);color:#3d6000;border:1px solid rgba(184,224,0,.4);border-radius:5px;padding:2px 8px;}
+
+/* ── CASES ── */
+.caso{border:2px solid var(--ink);border-radius:var(--r2);overflow:hidden;margin:14px 0;}
+.caso-hd{background:var(--ink);padding:12px 18px;display:flex;align-items:center;gap:10px;}
+.caso-badge{background:var(--red);color:#fff;font-family:var(--ff-m);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:99px;}
+.caso-title{font-family:var(--ff-h);font-size:16px;font-weight:700;color:#fff;}
+.caso-body{padding:16px 18px;background:var(--paper2);}
+.caso-data{font-family:var(--ff-m);font-size:11px;background:var(--paper);border-radius:var(--r);padding:11px 14px;border-left:4px solid var(--red);margin-bottom:12px;line-height:1.9;color:var(--ink2);}
+.caso-data strong{color:var(--ink);}
+.caso-q{font-weight:700;font-size:14px;margin-bottom:10px;padding-top:10px;border-top:1.5px solid var(--rule);}
+.caso-opts{display:flex;flex-direction:column;gap:7px;}
+.c-opt{display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border:1.5px solid var(--rule);border-radius:var(--r);background:var(--paper);cursor:pointer;font-size:13px;line-height:1.5;transition:all .2s;text-align:left;width:100%;}
+.c-opt:hover:not(.disabled){border-color:var(--ink3);}
+.c-opt.correct{border-color:var(--green);background:var(--green-s);}
+.c-opt.wrong{border-color:var(--red);background:var(--red-s);}
+.c-opt.disabled{cursor:default;pointer-events:none;}
+.c-let{font-family:var(--ff-m);font-size:10px;background:var(--paper2);min-width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.c-opt.correct .c-let{background:var(--green);color:#fff;}
+.c-opt.wrong .c-let{background:var(--red);color:#fff;}
+.caso-exp{margin-top:10px;background:var(--ink);color:#fff;border-radius:var(--r);padding:12px 16px;font-size:12px;line-height:1.7;animation:sIn .3s ease;}
+.ce-tag{font-family:var(--ff-m);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--lime);margin-bottom:4px;display:block;}
+.caso-exp strong{color:var(--lime);}
+
+/* ── QUIZ ── */
+.q-item{background:var(--paper2);border:1.5px solid var(--ink3);border-radius:var(--r2);padding:20px;margin-bottom:14px;}
+.q-num{font-family:var(--ff-m);font-size:10px;color:var(--ink2);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.q-ctx{font-family:var(--ff-m);font-size:11px;background:var(--paper);border-radius:8px;padding:9px 14px;border-left:3px solid var(--blue);margin-bottom:12px;line-height:1.7;color:var(--ink2);}
+.q-txt{font-size:15px;font-weight:600;line-height:1.5;margin-bottom:14px;}
+.q-opts{display:flex;flex-direction:column;gap:7px;}
+.q-opt{display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border:1.5px solid var(--rule);border-radius:var(--r);background:var(--paper);cursor:pointer;font-size:13px;line-height:1.5;transition:all .2s;text-align:left;width:100%;}
+.q-opt:hover:not(.disabled){border-color:var(--ink3);}
+.q-opt.correct{border-color:var(--green);background:var(--green-s);}
+.q-opt.wrong{border-color:var(--red);background:var(--red-s);}
+.q-opt.disabled{cursor:default;pointer-events:none;}
+.q-let{font-family:var(--ff-m);font-size:10px;background:var(--paper2);min-width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.q-opt.correct .q-let{background:var(--green);color:#fff;}
+.q-opt.wrong .q-let{background:var(--red);color:#fff;}
+.q-exp{margin-top:10px;background:var(--ink);color:#fff;border-radius:var(--r);padding:12px 16px;font-size:12px;line-height:1.7;display:none;animation:sIn .3s ease;}
+.qe-tag{font-family:var(--ff-m);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--lime);margin-bottom:4px;display:block;}
+.q-exp strong{color:var(--lime);}
+
+/* ── SCORE ── */
+.score-box{background:var(--ink);border-radius:var(--r3);padding:32px;text-align:center;color:#fff;margin-top:16px;}
+.sc-num{font-family:var(--ff-h);font-size:72px;font-weight:900;color:var(--lime);line-height:1;margin-bottom:4px;}
+.sc-sub{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px;}
+.btn-lime{display:inline-flex;align-items:center;gap:8px;background:var(--lime);color:var(--ink);font-family:var(--ff-b);font-size:14px;font-weight:700;padding:12px 26px;border-radius:99px;border:none;cursor:pointer;}
+
+/* ── INTRO ── */
+.promise{background:var(--ink);color:#fff;border-radius:var(--r3);padding:20px 24px;margin:16px 0;}
+.pr-lbl{font-family:var(--ff-m);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--lime);margin-bottom:8px;display:block;}
+.pr-list{list-style:none;display:flex;flex-direction:column;gap:5px;}
+.pr-list li{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.6;color:rgba(255,255,255,.75);}
+.pr-list li::before{content:'→';color:var(--lime);flex-shrink:0;margin-top:1px;}
+.pr-list li strong{color:#fff;}
+.strat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;margin:16px 0;}
+.strat-it{border:1.5px solid var(--ink3);border-radius:var(--r);padding:13px;background:var(--paper2);text-align:center;transition:all .2s;}
+.strat-it:hover{border-color:var(--ink);transform:translateY(-2px);}
+.si-ic{font-size:22px;margin-bottom:5px;}
+.si-nm{font-weight:700;font-size:12px;line-height:1.2;}
+.si-ds{font-size:10px;color:var(--ink2);margin-top:2px;line-height:1.3;}
+.btn-start{display:inline-flex;align-items:center;gap:10px;background:var(--ink);color:var(--lime);font-family:var(--ff-h);font-size:17px;font-weight:700;padding:15px 32px;border-radius:99px;border:none;cursor:pointer;transition:all .22s;box-shadow:4px 4px 0 var(--lime);}
+.btn-start:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--lime);}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+
+/* ── PATTERN CARDS ── */
+.pattern-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0;}
+.pattern-card{border:1.5px solid var(--ink3);border-radius:var(--r);overflow:visible;cursor:pointer;transition:all .2s;}
+.pattern-card:hover{border-color:var(--ink);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.12);}
+.pattern-card.selected{border-color:var(--red);border-width:2px;}
+.pc-header{padding:7px 12px;display:flex;align-items:center;gap:8px;}
+.pc-header.normal{background:#2a4a1a;}
+.pc-header.urgent{background:#6b1a0a;}
+.pc-header.warning{background:#6b4a0a;}
+.pc-badge{font-family:var(--ff-m);font-size:9px;color:rgba(255,255,255,.9);letter-spacing:.08em;text-transform:uppercase;}
+.pc-title{font-size:12px;font-weight:700;color:#fff;}
+.pc-body{background:var(--paper);}
+.pc-detail{padding:10px 12px;font-size:11px;color:var(--ink2);line-height:1.6;display:none;background:var(--paper2);border-top:1px solid var(--rule);animation:sIn .25s ease;}
+.pattern-card.selected .pc-detail{display:block;}
+.pc-detail strong{color:var(--ink);}
+
+/* ── CALC BOX ── */
+.calc-box{background:var(--paper2);border:2px solid var(--ink3);border-radius:var(--r2);padding:18px;margin:12px 0;}
+.calc-inp{font-family:var(--ff-m);font-size:16px;width:70px;padding:8px 12px;border-radius:8px;border:2px solid var(--ink3);background:var(--paper);text-align:center;outline:none;transition:border-color .2s;}
+.calc-inp:focus{border-color:var(--blue);}
+.calc-btn{font-family:var(--ff-b);font-size:13px;font-weight:700;background:var(--ink);color:var(--lime);border:none;padding:9px 20px;border-radius:99px;cursor:pointer;}
+.calc-result{background:var(--ink);color:#fff;border-radius:var(--r);padding:12px 16px;margin-top:10px;font-family:var(--ff-m);font-size:13px;line-height:1.7;display:none;animation:sIn .3s ease;}
+.cr-val{font-size:22px;color:var(--lime);}
+
+/* ── CHECKLIST ── */
+.ck-prog{font-family:var(--ff-m);font-size:11px;color:var(--ink2);margin-bottom:10px;}
+.i-ck{display:flex;gap:10px;align-items:flex-start;padding:11px 14px;border-radius:var(--r);background:var(--paper2);border:1.5px solid var(--rule);cursor:pointer;margin-bottom:8px;transition:all .2s;font-size:13px;line-height:1.5;}
+.i-ck:hover{border-color:var(--ink3);}
+.i-ck.on{background:var(--green-s);border-color:var(--green);}
+.i-box{width:20px;height:20px;border-radius:5px;border:2px solid var(--ink3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .2s;margin-top:1px;}
+.i-ck.on .i-box{background:var(--green);border-color:var(--green);color:#fff;}
+.ck-sub{display:block;font-size:11px;color:var(--ink2);font-family:var(--ff-m);margin-top:3px;}
+
+/* ── AI ANALYZER ── */
+.ai-tool{
+  background:var(--ink);border-radius:var(--r3);
+  padding:0;overflow:hidden;margin:20px 0;
+  box-shadow:0 8px 32px rgba(0,0,0,.25);
+}
+.ai-tool-header{
+  background:linear-gradient(135deg,#1a1f3a,#0d1022);
+  padding:20px 24px;
+  display:flex;align-items:center;gap:14px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.ai-tool-icon{
+  width:48px;height:48px;border-radius:14px;
+  background:linear-gradient(135deg,var(--purple),#1045c8);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;flex-shrink:0;
+}
+.ai-tool-title{font-family:var(--ff-h);font-size:20px;font-weight:900;color:#fff;}
+.ai-tool-sub{font-family:var(--ff-m);font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+.ai-badge{
+  margin-left:auto;
+  font-family:var(--ff-m);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  background:rgba(124,58,237,.3);color:#c4b5fd;
+  border:1px solid rgba(124,58,237,.4);
+  padding:4px 10px;border-radius:99px;white-space:nowrap;
+}
+
+.ai-tool-body{padding:20px 24px;}
+
+/* Upload zone */
+.upload-zone{
+  border:2px dashed rgba(255,255,255,.15);
+  border-radius:var(--r2);
+  padding:32px;text-align:center;
+  cursor:pointer;transition:all .2s;
+  background:rgba(255,255,255,.03);
+  position:relative;
+}
+.upload-zone:hover,.upload-zone.dragover{
+  border-color:rgba(124,58,237,.6);
+  background:rgba(124,58,237,.06);
+}
+.upload-zone input[type=file]{
+  position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;
+}
+.uz-icon{font-size:40px;margin-bottom:12px;}
+.uz-title{font-family:var(--ff-h);font-size:18px;font-weight:700;color:#fff;margin-bottom:6px;}
+.uz-sub{font-size:12px;color:rgba(255,255,255,.4);line-height:1.6;}
+.uz-formats{
+  display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap;
+}
+.uz-fmt{
+  font-family:var(--ff-m);font-size:9px;
+  background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);
+  padding:3px 10px;border-radius:99px;
+  border:1px solid rgba(255,255,255,.1);
+}
+
+/* Preview zone */
+.preview-zone{display:none;margin-top:14px;}
+.preview-img-wrap{
+  position:relative;border-radius:var(--r);overflow:hidden;
+  background:#000;border:1px solid rgba(255,255,255,.1);
+  max-height:320px;display:flex;align-items:center;justify-content:center;
+}
+.preview-img-wrap img{max-width:100%;max-height:320px;object-fit:contain;display:block;}
+.preview-controls{display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap;}
+.ai-btn{
+  font-family:var(--ff-b);font-size:13px;font-weight:700;
+  padding:10px 22px;border-radius:99px;border:none;cursor:pointer;
+  transition:all .18s;display:inline-flex;align-items:center;gap:8px;
+}
+.ai-btn.primary{background:linear-gradient(135deg,var(--purple),var(--blue));color:#fff;}
+.ai-btn.primary:hover{transform:scale(1.03);}
+.ai-btn.secondary{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.12);}
+.ai-btn.secondary:hover{background:rgba(255,255,255,.14);}
+.ai-btn:disabled{opacity:.4;pointer-events:none;}
+
+/* Analysis panel */
+.analysis-panel{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:var(--r2);
+  padding:18px;
+  margin-top:14px;
+  display:none;
+}
+.ap-loading{text-align:center;padding:24px;}
+.ap-spinner{
+  width:40px;height:40px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.1);
+  border-top-color:var(--purple);
+  animation:spin 0.8s linear infinite;
+  margin:0 auto 12px;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ap-loading-text{font-family:var(--ff-m);font-size:11px;color:rgba(255,255,255,.5);}
+
+/* Result cards */
+.ap-results{display:none;}
+.ap-results.show{display:block;animation:sIn .4s ease;}
+
+.fc-display{
+  background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(16,69,200,.2));
+  border:1px solid rgba(124,58,237,.4);
+  border-radius:var(--r2);
+  padding:20px 24px;
+  text-align:center;
+  margin-bottom:16px;
+}
+.fc-num{
+  font-family:var(--ff-h);font-size:72px;font-weight:900;
+  color:var(--lime);line-height:1;margin-bottom:4px;
+}
+.fc-unit{font-family:var(--ff-m);font-size:14px;color:rgba(255,255,255,.5);}
+.fc-interp{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--ff-m);font-size:11px;
+  padding:4px 14px;border-radius:99px;margin-top:8px;
+}
+.fc-interp.normal{background:rgba(22,163,74,.2);color:#6ee7b7;border:1px solid rgba(22,163,74,.3);}
+.fc-interp.bradi{background:rgba(217,119,6,.2);color:#fcd34d;border:1px solid rgba(217,119,6,.3);}
+.fc-interp.taqui{background:rgba(217,58,39,.2);color:#fca5a5;border:1px solid rgba(217,58,39,.3);}
+
+.ap-section{margin-bottom:14px;}
+.ap-section-title{
+  font-family:var(--ff-m);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin-bottom:8px;
+}
+.ap-finding{
+  background:rgba(255,255,255,.04);
+  border-radius:var(--r);
+  padding:10px 14px;
+  margin-bottom:6px;
+  display:flex;gap:10px;align-items:flex-start;
+}
+.ap-find-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.ap-find-dot.ok{background:#6ee7b7;}
+.ap-find-dot.warn{background:#fcd34d;}
+.ap-find-dot.alert{background:#fca5a5;}
+.ap-find-text{font-size:12px;color:rgba(255,255,255,.75);line-height:1.6;}
+.ap-find-text strong{color:#fff;}
+
+.ap-alert{
+  background:rgba(217,58,39,.12);
+  border:1px solid rgba(217,58,39,.3);
+  border-radius:var(--r);
+  padding:10px 14px;
+  font-size:12px;color:rgba(255,255,255,.8);
+  line-height:1.7;
+  margin-top:8px;
+}
+.ap-disclaimer{
+  font-family:var(--ff-m);font-size:9px;
+  color:rgba(255,255,255,.2);
+  text-align:center;
+  margin-top:12px;
+  line-height:1.6;
+}
+
+/* Error state */
+.ap-error{
+  background:rgba(217,58,39,.1);border:1px solid rgba(217,58,39,.25);
+  border-radius:var(--r);padding:14px;text-align:center;
+  color:#fca5a5;font-family:var(--ff-m);font-size:12px;
+}
+
+/* ── LEGEND BAR ── */
+.legend-bar{
+  display:flex;gap:14px;flex-wrap:wrap;
+  padding:10px 14px;background:var(--paper2);
+  border-radius:var(--r);margin-bottom:6px;
+  font-family:var(--ff-m);font-size:10px;
+}
+.legend-item{display:flex;align-items:center;gap:5px;color:var(--ink2);}
+.legend-dot{width:10px;height:10px;border-radius:50%;}
+
+/* hint strip */
+.hs-hint{
+  text-align:center;font-family:var(--ff-m);font-size:10px;
+  color:var(--ink2);letter-spacing:.05em;
+  padding:4px 0;margin-bottom:2px;
+}
+
+@media(max-width:620px){
+  .g2,.g3{grid-template-columns:1fr;}
+  .flip-grid{grid-template-columns:repeat(2,1fr);}
+  .pattern-grid{grid-template-columns:1fr;}
+  .h-hero{font-size:clamp(34px,9vw,56px);}
+  .ai-tool-body{padding:14px 16px;}
+  .upload-zone{padding:20px 14px;}
+}
+</style>
+</head>
+<body>
+
+<!-- SVG DEFS -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="aR" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#d93a27"/></marker>
+    <marker id="aB" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#1045c8"/></marker>
+    <marker id="aRb" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto"><path d="M6,0 L6,6 L0,3 z" fill="#d93a27"/></marker>
+    <marker id="aBb" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto"><path d="M6,0 L6,6 L0,3 z" fill="#1045c8"/></marker>
+    <marker id="aG" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#16a34a"/></marker>
+    <marker id="aGb" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto"><path d="M6,0 L6,6 L0,3 z" fill="#16a34a"/></marker>
+  </defs>
+</svg>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tl">ECG<span>·</span>Clínico</div>
+  <div class="tm">MÓDULO 1 · 2h</div>
+  <div class="ts"></div>
+  <div class="tdots" id="tdots"></div>
+  <span style="font-family:var(--ff-m);font-size:11px;color:var(--ink2)" id="tpct">0/9</span>
+</div>
+<div class="pgline" id="pgline" style="width:0%"></div>
+
+<div class="main">
+
+<!-- ══════ SLIDE 0 · PORTADA ══════ -->
+<section class="slide active" data-s="0">
+  <span class="eyebrow">Curso ECG Clínico · 20h · Módulo 1 de 8</span>
+  <div class="h-hero">El ECG<br><span class="ul">no&nbsp;miente</span><br><span class="red">…si sabes<br>cómo leerlo</span></div>
+  <p class="lead">2 horas. Trazados reales con zonas interactivas. Método clínico probado. Calculadora de FC con inteligencia artificial.</p>
+  <div class="chip-row">
+    <span class="chip ch-lime">⏱ 2 horas</span>
+    <span class="chip ch-red">📊 Trazados con hotspots</span>
+    <span class="chip ch-blue">🏥 Urgencias · Hospitalización</span>
+    <span class="chip ch-amber">📐 Cálculos guiados</span>
+    <span class="chip" style="color:#7c3aed;background:var(--purple-s);border-color:#7c3aed">🤖 IA calcula la FC</span>
+  </div>
+  <div class="promise">
+    <span class="pr-lbl">Al terminar este módulo podrás…</span>
+    <ul class="pr-list">
+      <li><strong>Leer las ondas del ECG</strong> identificando cada componente en el papel cuadriculado real</li>
+      <li><strong>Calcular la FC</strong> con el método 300 ÷ cuadrados — entendiendo el por qué</li>
+      <li><strong>Aplicar F·R·E·C</strong> como método de lectura sistemático en menos de 60 segundos</li>
+      <li><strong>Reconocer 6 patrones urgentes</strong> con sus señales de alerta resaltadas</li>
+      <li><strong>Usar la IA</strong> para analizar una foto de ECG y calcular la frecuencia cardíaca</li>
+    </ul>
+  </div>
+  <div class="strat-grid">
+    <div class="strat-it"><div class="si-ic">🎯</div><div class="si-nm">Hotspots</div><div class="si-ds">Zonas señalizadas sobre el trazado</div></div>
+    <div class="strat-it"><div class="si-ic">📐</div><div class="si-nm">Cálculo guiado</div><div class="si-ds">Paso a paso con flechas</div></div>
+    <div class="strat-it"><div class="si-ic">🃏</div><div class="si-nm">Tarjetas flip</div><div class="si-ds">Tip clínico al reverso</div></div>
+    <div class="strat-it"><div class="si-ic">🏥</div><div class="si-nm">Mini casos</div><div class="si-ds">Decisión en el turno</div></div>
+    <div class="strat-it"><div class="si-ic">🤖</div><div class="si-nm">IA calcula FC</div><div class="si-ds">Sube tu foto de ECG</div></div>
+    <div class="strat-it"><div class="si-ic">✅</div><div class="si-nm">Checklist</div><div class="si-ds">Tu protocolo diario</div></div>
+  </div>
+  <button class="btn-start" onclick="go(1)">Empezar →</button>
+</section>
+
+<!-- ══════ SLIDE 1 · EL PAPEL + ONDAS CON HOTSPOTS ══════ -->
+<section class="slide" data-s="1">
+  <div class="step-header">
+    <div class="sh-num">01</div>
+    <div class="sh-body">
+      <span class="sh-tag">Objetivo 1 · Anatomía del trazado</span>
+      <div class="sh-title">El papel y las ondas: toca cada señal para entenderla</div>
+    </div>
+    <div class="sh-obj">Obj. 1 ✓</div>
+  </div>
+
+  <p class="lead" style="margin-bottom:10px">Cada cuadrado en el papel tiene un valor de tiempo fijo. Cada onda representa una parte del corazón activándose. <strong>Toca los puntos de colores</strong> sobre el trazado.</p>
+
+  <!-- LEGEND -->
+  <div class="legend-bar">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Onda / Intervalo</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div> Medición temporal</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div> Alerta clínica</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div> Segmento</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Normal / referencia</div>
+  </div>
+
+  <div class="hs-hint">👆 Toca los puntos para ver información clínica clave</div>
+
+  <!-- ECG PAPEL con hotspots -->
+  <div class="ecg-paper">
+    <div class="ecg-paper-header">
+      <span>ATLAS · Ondas normales del ECG — Un latido completo</span>
+      <span style="font-size:9px;opacity:.7">DII · 25mm/seg · 10mm/mV</span>
+    </div>
+    <div style="padding:8px 10px 4px;position:relative;">
+      <!-- ECG SVG -->
+      <svg class="ecg-svg" id="ecgFig2" viewBox="0 0 760 200" preserveAspectRatio="xMidYMid meet">
+        <!-- ECG PAPER BACKGROUND -->
+        <rect x="8" y="8" width="740" height="170" fill="#fdf6e3"/>
+        <!-- Small grid -->
+        <g stroke="#ead8b0" stroke-width=".4">
+          <line x1="28" y1="8" x2="28" y2="178"/><line x1="48" y1="8" x2="48" y2="178"/><line x1="68" y1="8" x2="68" y2="178"/><line x1="88" y1="8" x2="88" y2="178"/>
+          <line x1="128" y1="8" x2="128" y2="178"/><line x1="148" y1="8" x2="148" y2="178"/><line x1="168" y1="8" x2="168" y2="178"/><line x1="188" y1="8" x2="188" y2="178"/>
+          <line x1="228" y1="8" x2="228" y2="178"/><line x1="248" y1="8" x2="248" y2="178"/><line x1="268" y1="8" x2="268" y2="178"/><line x1="288" y1="8" x2="288" y2="178"/>
+          <line x1="328" y1="8" x2="328" y2="178"/><line x1="348" y1="8" x2="348" y2="178"/><line x1="368" y1="8" x2="368" y2="178"/><line x1="388" y1="8" x2="388" y2="178"/>
+          <line x1="428" y1="8" x2="428" y2="178"/><line x1="448" y1="8" x2="448" y2="178"/><line x1="468" y1="8" x2="468" y2="178"/><line x1="488" y1="8" x2="488" y2="178"/>
+          <line x1="528" y1="8" x2="528" y2="178"/><line x1="548" y1="8" x2="548" y2="178"/><line x1="568" y1="8" x2="568" y2="178"/><line x1="588" y1="8" x2="588" y2="178"/>
+          <line x1="628" y1="8" x2="628" y2="178"/><line x1="648" y1="8" x2="648" y2="178"/><line x1="668" y1="8" x2="668" y2="178"/><line x1="688" y1="8" x2="688" y2="178"/>
+          <line x1="728" y1="8" x2="728" y2="178"/>
+          <line x1="8" y1="28" x2="748" y2="28"/><line x1="8" y1="48" x2="748" y2="48"/><line x1="8" y1="68" x2="748" y2="68"/><line x1="8" y1="88" x2="748" y2="88"/>
+          <line x1="8" y1="128" x2="748" y2="128"/><line x1="8" y1="148" x2="748" y2="148"/>
+        </g>
+        <!-- Big grid -->
+        <g stroke="#c8a87a" stroke-width="1.2">
+          <line x1="8" y1="8" x2="8" y2="178"/><line x1="108" y1="8" x2="108" y2="178"/><line x1="208" y1="8" x2="208" y2="178"/>
+          <line x1="308" y1="8" x2="308" y2="178"/><line x1="408" y1="8" x2="408" y2="178"/><line x1="508" y1="8" x2="508" y2="178"/>
+          <line x1="608" y1="8" x2="608" y2="178"/><line x1="708" y1="8" x2="708" y2="178"/><line x1="748" y1="8" x2="748" y2="178"/>
+          <line x1="8" y1="8" x2="748" y2="8"/><line x1="8" y1="108" x2="748" y2="108"/><line x1="8" y1="168" x2="748" y2="168"/><line x1="8" y1="178" x2="748" y2="178"/>
+        </g>
+        <!-- Baseline y=108 -->
+        <line x1="8" y1="108" x2="748" y2="108" stroke="#c8a87a" stroke-width="1.5"/>
+
+        <!-- ── SHADING: P wave region ── -->
+        <rect x="54" y="8" width="66" height="170" fill="rgba(217,58,39,.06)" rx="0"/>
+        <!-- ── SHADING: PR interval ── -->
+        <rect x="54" y="130" width="148" height="28" fill="rgba(16,69,200,.07)" rx="0"/>
+        <!-- ── SHADING: QRS complex ── -->
+        <rect x="202" y="8" width="80" height="170" fill="rgba(217,119,6,.06)" rx="0"/>
+        <!-- ── SHADING: ST segment ── -->
+        <rect x="282" y="88" width="100" height="40" fill="rgba(10,144,128,.07)" rx="0"/>
+        <!-- ── SHADING: T wave ── -->
+        <rect x="370" y="8" width="110" height="170" fill="rgba(22,163,74,.05)" rx="0"/>
+        <!-- ── SHADING: QT interval ── -->
+        <rect x="202" y="158" width="280" height="18" fill="rgba(124,58,237,.06)" rx="0"/>
+
+        <!-- ECG TRACE -->
+        <polyline fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+          points="8,108 40,108 54,108 62,96 74,84 86,96 94,108 108,108 120,108
+                  132,108 145,108 158,108 172,108 185,108 202,108
+                  205,106 208,112 212,24 215,120 218,108
+                  224,108 238,100 255,92 272,100 282,108
+                  295,108 308,108 320,108 335,108 358,108
+                  370,108 382,96 400,80 420,88 440,96 455,108
+                  470,108 490,108 510,108 530,108 560,108
+                  575,108 590,98 608,88 625,98 640,108
+                  660,108 680,108 700,108 720,108 748,108"/>
+
+        <!-- Measurement annotations -->
+        <!-- PR bracket -->
+        <line x1="62" y1="158" x2="202" y2="158" stroke="#1045c8" stroke-width="1.5" marker-end="url(#aB)" marker-start="url(#aBb)"/>
+        <text x="132" y="172" font-family="DM Mono,monospace" font-size="9" fill="#1045c8" text-anchor="middle">PR: 0.12–0.20 seg</text>
+        <!-- QRS bracket -->
+        <line x1="202" y1="148" x2="282" y2="148" stroke="#d97706" stroke-width="1.5" marker-end="url(#aR)" marker-start="url(#aRb)"/>
+        <text x="242" y="143" font-family="DM Mono,monospace" font-size="8" fill="#d97706" text-anchor="middle">QRS &lt;0.12s</text>
+        <!-- QT bracket -->
+        <line x1="202" y1="168" x2="482" y2="168" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#aR)" marker-start="url(#aRb)"/>
+        <text x="342" y="182" font-family="DM Mono,monospace" font-size="9" fill="#7c3aed" text-anchor="middle">QT: 0.36–0.45 seg</text>
+
+        <!-- Derivation label -->
+        <text x="16" y="24" font-family="Fraunces,serif" font-size="11" fill="#5a3a1a" font-weight="700">DII</text>
+      </svg>
+
+      <!-- HOTSPOT OVERLAY -->
+      <div class="hotspot-overlay" id="ecgOverlay1" style="position:absolute;inset:0;pointer-events:none;">
+
+        <!-- P wave hotspot -->
+        <div class="hs red" style="position:absolute;left:9%;top:28%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">P</div>
+          <div class="hs-tip tip-right">
+            <span class="tip-title">Onda P</span>
+            Activación auricular.<br>
+            Normal: ≤2.5mm alto y ≤2.5mm ancho.<br>
+            Positiva en DII siempre.<br>
+            <span class="tip-warn">⚠ Alta+picuda = crecimiento aurícula D</span>
+          </div>
+        </div>
+
+        <!-- PR interval hotspot -->
+        <div class="hs blue" style="position:absolute;left:22%;top:60%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">PR</div>
+          <div class="hs-tip">
+            <span class="tip-title">Intervalo PR</span>
+            Desde inicio P hasta inicio QRS.<br>
+            Normal: 3–5 cuadraditos pequeños.<br>
+            <span class="tip-warn">⚠ &gt;5□ = Bloqueo AV · &lt;3□ = WPW</span>
+          </div>
+        </div>
+
+        <!-- Q wave -->
+        <div class="hs amber" style="position:absolute;left:29%;top:43%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">Q</div>
+          <div class="hs-tip tip-right">
+            <span class="tip-title">Onda Q</span>
+            Primera deflexión negativa del QRS.<br>
+            Pequeña Q septal = normal en DI, aVL, V5-V6.<br>
+            <span class="tip-warn">⚠ Q &gt;0.04s + &gt;25% del QRS = necrosis</span>
+          </div>
+        </div>
+
+        <!-- R wave -->
+        <div class="hs red" style="position:absolute;left:32%;top:8%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">R</div>
+          <div class="hs-tip">
+            <span class="tip-title">Onda R</span>
+            Primera deflexión positiva del QRS.<br>
+            Representa activación ventricular.<br>
+            Debe progresar V1→V6 (↑ altura).<br>
+            <span class="tip-warn">⚠ Progresión pobre = IAM anterior antiguo</span>
+          </div>
+        </div>
+
+        <!-- S wave -->
+        <div class="hs amber" style="position:absolute;left:36%;top:62%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">S</div>
+          <div class="hs-tip tip-right">
+            <span class="tip-title">Onda S</span>
+            Segunda deflexión negativa del QRS.<br>
+            S ancha en DI/V6 = BRD ("oreja de conejo" en V1).<br>
+            <span class="tip-warn">⚠ S profunda en V1+R en V5 &gt;35mm = HVI</span>
+          </div>
+        </div>
+
+        <!-- ST segment -->
+        <div class="hs teal" style="position:absolute;left:45%;top:48%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">ST</div>
+          <div class="hs-tip">
+            <span class="tip-title">Segmento ST</span>
+            Debe ser isoeléctrico (plano).<br>
+            Punto J = unión QRS-ST.<br>
+            <span class="tip-warn">⚠ ST↑ convexo = STEMI · ST↓ plano = isquemia subendocárdica</span>
+          </div>
+        </div>
+
+        <!-- T wave -->
+        <div class="hs" style="position:absolute;left:57%;top:22%;pointer-events:all;color:var(--green)" onclick="toggleHS(this)">
+          <div class="hs-dot" style="background:var(--green)">T</div>
+          <div class="hs-tip tip-left">
+            <span class="tip-title">Onda T</span>
+            Repolarización ventricular.<br>
+            Normal: asimétrica, positiva en DI/DII/V2-V6.<br>
+            <span class="tip-warn">⚠ T picuda simétrica = K⁺ alto<br>⚠ T invertida = isquemia subepicárdica</span>
+          </div>
+        </div>
+
+        <!-- QT interval -->
+        <div class="hs purple" style="position:absolute;left:42%;top:82%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot" style="background:var(--purple)">QT</div>
+          <div class="hs-tip">
+            <span class="tip-title">Intervalo QT</span>
+            Desde inicio Q hasta fin T.<br>
+            Normal QTc: &lt;440ms (H) / &lt;460ms (M).<br>
+            <span class="tip-warn">⚠ QTc &gt;500ms = riesgo Torsades de Pointes</span>
+          </div>
+        </div>
+
+        <!-- Square size hotspot -->
+        <div class="hs" style="position:absolute;left:80%;top:15%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot" style="background:#5a7200;border-color:#5a7200">□</div>
+          <div class="hs-tip tip-left">
+            <span class="tip-title">El papel del ECG</span>
+            □ pequeño = 0.04 seg = 1mm<br>
+            □ grande (5□) = 0.20 seg = 5mm<br>
+            FC = 300 ÷ cuadrados grandes R-R<br>
+            <span class="tip-warn">Velocidad estándar: 25 mm/seg</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TARJETAS FLIP -->
+  <p class="flip-note" style="margin-top:16px">👇 TOCA CADA TARJETA — dato clínico al reverso</p>
+  <div class="flip-grid">
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-f"><div class="ff-ic">💓</div><div class="ff-wv">P</div><div class="ff-nm">Onda P</div></div>
+        <div class="flip-b"><div class="fb-v">≤2.5mm alta/ancha</div><div class="fb-t">Sin P → no es sinusal.<br>Siempre buscarla en DII.</div></div>
+      </div>
+    </div>
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-f"><div class="ff-ic">⏱</div><div class="ff-wv">PR</div><div class="ff-nm">Intervalo PR</div></div>
+        <div class="flip-b"><div class="fb-v">0.12–0.20 seg (3–5□)</div><div class="fb-t">Largo → bloqueo AV.<br>Corto → WPW.</div></div>
+      </div>
+    </div>
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-f"><div class="ff-ic">⚡</div><div class="ff-wv">QRS</div><div class="ff-nm">Complejo QRS</div></div>
+        <div class="flip-b"><div class="fb-v">&lt;0.12 seg (≤3□)</div><div class="fb-t">Ancho → conducción alterada.<br>Mira morfología en V1.</div></div>
+      </div>
+    </div>
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-f"><div class="ff-ic">🔥</div><div class="ff-wv">ST</div><div class="ff-nm">Segmento ST</div></div>
+        <div class="flip-b"><div class="fb-v">Isoeléctrico = normal</div><div class="fb-t">↑ convexo = STEMI activo.<br>↓ plano = isquemia.</div></div>
+      </div>
+    </div>
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-f"><div class="ff-ic">🌊</div><div class="ff-wv">T</div><div class="ff-nm">Onda T</div></div>
+        <div class="flip-b"><div class="fb-v">Asimétrica · positiva DII</div><div class="fb-t">Picuda simétrica = K⁺↑<br>Invertida = isquemia</div></div>
+      </div>
+    </div>
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-f"><div class="ff-ic">📏</div><div class="ff-wv">QTc</div><div class="ff-nm">QT corregido</div></div>
+        <div class="flip-b"><div class="fb-v">&lt;440ms H / &lt;460ms M</div><div class="fb-t">QTc &gt;500ms = peligro.<br>Revisa fármacos.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ SLIDE 2 · CÁLCULO FC CON HOTSPOTS ══════ -->
+<section class="slide" data-s="2">
+  <div class="step-header">
+    <div class="sh-num">02</div>
+    <div class="sh-body">
+      <span class="sh-tag">Objetivo 2 · Cálculo guiado</span>
+      <div class="sh-title">Frecuencia Cardíaca: calculando sobre el trazado real</div>
+    </div>
+    <div class="sh-obj">Obj. 2 ✓</div>
+  </div>
+
+  <p class="lead" style="margin-bottom:12px">La fórmula es <strong>FC = 300 ÷ cuadrados grandes entre dos QRS</strong>. Toca los hotspots sobre cada trazado para entender el razonamiento.</p>
+
+  <!-- ① Ritmo sinusal normal ~75 lpm -->
+  <div class="h-sec" style="margin-bottom:6px">① Ritmo sinusal normal — FC ~75 lpm (4 cuadrados grandes)</div>
+  <div class="hs-hint">👆 Toca los puntos azules para ver el conteo de cuadrados</div>
+  <div class="ecg-paper">
+    <div class="ecg-paper-header">
+      <span>Ritmo sinusal normal · FC ≈ 75 lpm</span>
+      <span style="font-size:9px;opacity:.7">DII · 25mm/seg</span>
+    </div>
+    <div style="padding:8px 10px 4px;position:relative;">
+      <svg class="ecg-svg" viewBox="0 0 700 130" preserveAspectRatio="xMidYMid meet">
+        <rect x="8" y="8" width="680" height="105" fill="#fdf6e3"/>
+        <g stroke="#ead8b0" stroke-width=".4">
+          <line x1="28" y1="8" x2="28" y2="113"/><line x1="48" y1="8" x2="48" y2="113"/><line x1="68" y1="8" x2="68" y2="113"/><line x1="88" y1="8" x2="88" y2="113"/>
+          <line x1="128" y1="8" x2="128" y2="113"/><line x1="148" y1="8" x2="148" y2="113"/><line x1="168" y1="8" x2="168" y2="113"/><line x1="188" y1="8" x2="188" y2="113"/>
+          <line x1="228" y1="8" x2="228" y2="113"/><line x1="248" y1="8" x2="248" y2="113"/><line x1="268" y1="8" x2="268" y2="113"/><line x1="288" y1="8" x2="288" y2="113"/>
+          <line x1="328" y1="8" x2="328" y2="113"/><line x1="348" y1="8" x2="348" y2="113"/><line x1="368" y1="8" x2="368" y2="113"/><line x1="388" y1="8" x2="388" y2="113"/>
+          <line x1="428" y1="8" x2="428" y2="113"/><line x1="448" y1="8" x2="448" y2="113"/><line x1="468" y1="8" x2="468" y2="113"/><line x1="488" y1="8" x2="488" y2="113"/>
+          <line x1="528" y1="8" x2="528" y2="113"/><line x1="548" y1="8" x2="548" y2="113"/><line x1="568" y1="8" x2="568" y2="113"/><line x1="588" y1="8" x2="588" y2="113"/>
+          <line x1="628" y1="8" x2="628" y2="113"/><line x1="648" y1="8" x2="648" y2="113"/><line x1="668" y1="8" x2="668" y2="113"/>
+          <line x1="8" y1="28" x2="688" y2="28"/><line x1="8" y1="48" x2="688" y2="48"/><line x1="8" y1="68" x2="688" y2="68"/><line x1="8" y1="88" x2="688" y2="88"/>
+        </g>
+        <g stroke="#c8a87a" stroke-width="1.2">
+          <line x1="8" y1="8" x2="8" y2="113"/><line x1="108" y1="8" x2="108" y2="113"/><line x1="208" y1="8" x2="208" y2="113"/>
+          <line x1="308" y1="8" x2="308" y2="113"/><line x1="408" y1="8" x2="408" y2="113"/><line x1="508" y1="8" x2="508" y2="113"/>
+          <line x1="608" y1="8" x2="608" y2="113"/><line x1="688" y1="8" x2="688" y2="113"/>
+          <line x1="8" y1="8" x2="688" y2="8"/><line x1="8" y1="68" x2="688" y2="68"/><line x1="8" y1="113" x2="688" y2="113"/>
+        </g>
+        <!-- Baseline y=68 -->
+        <!-- Shade the 4 big squares between R peaks -->
+        <rect x="108" y="8" width="100" height="105" fill="rgba(16,69,200,.06)"/>
+        <rect x="208" y="8" width="100" height="105" fill="rgba(16,69,200,.04)"/>
+        <rect x="308" y="8" width="100" height="105" fill="rgba(16,69,200,.06)"/>
+        <rect x="408" y="8" width="100" height="105" fill="rgba(16,69,200,.04)"/>
+
+        <!-- Numbers on top of shaded squares -->
+        <text x="158" y="22" font-family="DM Mono,monospace" font-size="12" text-anchor="middle" fill="#1045c8" font-weight="bold">1</text>
+        <text x="258" y="22" font-family="DM Mono,monospace" font-size="12" text-anchor="middle" fill="#1045c8" font-weight="bold">2</text>
+        <text x="358" y="22" font-family="DM Mono,monospace" font-size="12" text-anchor="middle" fill="#1045c8" font-weight="bold">3</text>
+        <text x="458" y="22" font-family="DM Mono,monospace" font-size="12" text-anchor="middle" fill="#1045c8" font-weight="bold">4</text>
+
+        <!-- ECG Trace: beats at x=108 and x=508 (4 big squares = 400px apart) -->
+        <polyline fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"
+          points="8,68 40,68 52,64 62,56 72,64 80,68 95,68 108,68 110,66 112,72 114,10 116,76 118,68 124,64 136,58 148,64 158,68 190,68 208,68 220,68 232,64 242,56 252,64 260,68 275,68 288,68
+                  290,66 292,72 294,10 296,76 298,68 304,64 316,58 328,64 338,68 368,68
+                  390,68 408,68 410,66 412,72 414,10 416,76 418,68 424,64 436,58 448,64 458,68 490,68
+                  508,68 520,64 530,56 540,64 548,68 563,68 576,68
+                  578,66 580,72 582,10 584,76 586,68 592,64 604,58 616,64 626,68 658,68 688,68"/>
+
+        <!-- R-R arrows -->
+        <line x1="114" y1="100" x2="414" y2="100" stroke="#d93a27" stroke-width="1.5" marker-end="url(#aR)" marker-start="url(#aRb)"/>
+        <text x="264" y="98" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" fill="#d93a27">distancia R–R = 4 cuadrados grandes</text>
+
+        <!-- Result box -->
+        <rect x="530" y="28" width="148" height="52" rx="8" fill="#111318"/>
+        <text x="604" y="48" font-family="DM Mono,monospace" font-size="10" text-anchor="middle" fill="rgba(184,224,0,.7)">300 ÷ 4 =</text>
+        <text x="604" y="68" font-family="Fraunces,serif" font-size="22" text-anchor="middle" fill="#b8e000" font-weight="900">75 lpm ✓</text>
+
+        <text x="16" y="20" font-family="Fraunces,serif" font-size="10" fill="#5a3a1a" font-weight="700">DII</text>
+      </svg>
+      <!-- Hotspots over this ECG -->
+      <div style="position:absolute;inset:0;pointer-events:none;">
+        <div class="hs blue tip-below" style="position:absolute;left:16%;top:5%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">R¹</div>
+          <div class="hs-tip">
+            <span class="tip-title">Primer pico R</span>
+            Aquí empiezas a contar.<br>
+            Coloca el dedo en esta línea gruesa.<br>
+            <span class="tip-warn">Siempre cuadrados GRANDES</span>
+          </div>
+        </div>
+        <div class="hs blue tip-below" style="position:absolute;left:59%;top:5%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">R²</div>
+          <div class="hs-tip">
+            <span class="tip-title">Segundo pico R</span>
+            Aquí terminas de contar.<br>
+            Contaste 4 cuadrados grandes.<br>
+            300 ÷ 4 = <strong>75 lpm</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② Bradicardia sinusal ~50 lpm -->
+  <div class="h-sec" style="margin-bottom:6px;margin-top:18px">② Bradicardia sinusal — FC ~50 lpm (6 cuadrados grandes)</div>
+  <div class="ecg-paper">
+    <div class="ecg-paper-header">
+      <span>Bradicardia sinusal · FC ≈ 50 lpm · Ritmo sinusal lento</span>
+      <span style="font-size:9px;opacity:.7">DII</span>
+    </div>
+    <div style="padding:8px 10px 4px;position:relative;">
+      <svg class="ecg-svg" viewBox="0 0 700 130" preserveAspectRatio="xMidYMid meet">
+        <rect x="8" y="8" width="680" height="105" fill="#fdf6e3"/>
+        <g stroke="#ead8b0" stroke-width=".4">
+          <line x1="28" y1="8" x2="28" y2="113"/><line x1="48" y1="8" x2="48" y2="113"/><line x1="68" y1="8" x2="68" y2="113"/><line x1="88" y1="8" x2="88" y2="113"/>
+          <line x1="128" y1="8" x2="128" y2="113"/><line x1="148" y1="8" x2="148" y2="113"/><line x1="168" y1="8" x2="168" y2="113"/><line x1="188" y1="8" x2="188" y2="113"/>
+          <line x1="228" y1="8" x2="228" y2="113"/><line x1="248" y1="8" x2="248" y2="113"/><line x1="268" y1="8" x2="268" y2="113"/><line x1="288" y1="8" x2="288" y2="113"/>
+          <line x1="328" y1="8" x2="328" y2="113"/><line x1="348" y1="8" x2="348" y2="113"/><line x1="368" y1="8" x2="368" y2="113"/><line x1="388" y1="8" x2="388" y2="113"/>
+          <line x1="428" y1="8" x2="428" y2="113"/><line x1="448" y1="8" x2="448" y2="113"/><line x1="468" y1="8" x2="468" y2="113"/><line x1="488" y1="8" x2="488" y2="113"/>
+          <line x1="528" y1="8" x2="528" y2="113"/><line x1="548" y1="8" x2="548" y2="113"/><line x1="568" y1="8" x2="568" y2="113"/><line x1="588" y1="8" x2="588" y2="113"/>
+          <line x1="628" y1="8" x2="628" y2="113"/><line x1="648" y1="8" x2="648" y2="113"/><line x1="668" y1="8" x2="668" y2="113"/>
+          <line x1="8" y1="28" x2="688" y2="28"/><line x1="8" y1="48" x2="688" y2="48"/><line x1="8" y1="88" x2="688" y2="88"/>
+        </g>
+        <g stroke="#c8a87a" stroke-width="1.2">
+          <line x1="8" y1="8" x2="8" y2="113"/><line x1="108" y1="8" x2="108" y2="113"/><line x1="208" y1="8" x2="208" y2="113"/>
+          <line x1="308" y1="8" x2="308" y2="113"/><line x1="408" y1="8" x2="408" y2="113"/><line x1="508" y1="8" x2="508" y2="113"/>
+          <line x1="608" y1="8" x2="608" y2="113"/><line x1="688" y1="8" x2="688" y2="113"/>
+          <line x1="8" y1="8" x2="688" y2="8"/><line x1="8" y1="68" x2="688" y2="68"/><line x1="8" y1="113" x2="688" y2="113"/>
+        </g>
+        <!-- Shade 6 big squares -->
+        <rect x="68" y="8" width="100" height="105" fill="rgba(217,58,39,.05)"/>
+        <rect x="168" y="8" width="100" height="105" fill="rgba(217,58,39,.03)"/>
+        <rect x="268" y="8" width="100" height="105" fill="rgba(217,58,39,.05)"/>
+        <rect x="368" y="8" width="100" height="105" fill="rgba(217,58,39,.03)"/>
+        <rect x="468" y="8" width="100" height="105" fill="rgba(217,58,39,.05)"/>
+        <rect x="568" y="8" width="100" height="105" fill="rgba(217,58,39,.03)"/>
+
+        <!-- Numbers -->
+        <text x="118" y="22" font-family="DM Mono,monospace" font-size="12" text-anchor="middle" fill="#d93a27" font-weight="bold">1</text>
+        <text x="218" y="22" font-family="DM Mono,monospace" font-size="12" text-anchor="middle" fill="#d93a27" font-weight="bold">2</text>
+        <text x="318" y="22" font-family="DM Mono,monospace" font-size="12" text-anchor="middle" fill="#d93a27" font-weight="bold">3</text>
+        <text x="418" y="22" font-family="DM Mono,monospace" font-size="12" text-anchor="middle" fill="#d93a27" font-weight="bold">4</text>
+        <text x="518" y="22" font-family="DM Mono,monospace" font-size="12" text-anchor="middle" fill="#d93a27" font-weight="bold">5</text>
+        <text x="618" y="22" font-family="DM Mono,monospace" font-size="12" text-anchor="middle" fill="#d93a27" font-weight="bold">6</text>
+
+        <!-- ECG Trace: beats at x=68 and x=668 (6 big squares = 600px) -->
+        <polyline fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"
+          points="8,68 30,68 40,64 50,58 60,64 66,68
+                  68,68 70,66 72,72 74,10 76,78 78,68 82,64 94,58 106,64 116,68 160,68
+                  200,68 230,68 260,68 290,68 320,68 350,68 368,68
+                  370,64 380,58 390,64 396,68
+                  398,66 400,72 402,10 404,78 406,68 412,64 424,58 436,64 446,68 490,68
+                  530,68 560,68 590,68 620,68 650,68
+                  658,64 664,58 670,64 674,68
+                  676,66 678,72 680,10 682,78 684,68 688,68"/>
+
+        <!-- R-R distance indicator -->
+        <line x1="74" y1="103" x2="680" y2="103" stroke="#d93a27" stroke-width="1.5" marker-end="url(#aR)" marker-start="url(#aRb)"/>
+        <text x="377" y="101" font-family="DM Mono,monospace" font-size="8" text-anchor="middle" fill="#d93a27">6 cuadrados grandes → 300 ÷ 6 = 50 lpm</text>
+
+        <!-- Result -->
+        <rect x="8" y="28" width="55" height="36" rx="6" fill="#111318"/>
+        <text x="35" y="44" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" fill="rgba(255,165,0,.8)">300÷6</text>
+        <text x="35" y="57" font-family="Fraunces,serif" font-size="13" text-anchor="middle" fill="#fbbf24" font-weight="900">50 lpm</text>
+
+        <text x="16" y="20" font-family="Fraunces,serif" font-size="10" fill="#5a3a1a" font-weight="700">DII</text>
+      </svg>
+      <!-- Hotspot bradicardia -->
+      <div style="position:absolute;inset:0;pointer-events:none;">
+        <div class="hs amber tip-below" style="position:absolute;left:52%;top:5%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">!</div>
+          <div class="hs-tip">
+            <span class="tip-title">Bradicardia ≠ emergencia automática</span>
+            FC &lt;60 lpm en deportistas = normal.<br>
+            En paciente crítico: buscar causa.<br>
+            <span class="tip-warn">⚠ Con compromiso hemodinámico → atropina IV + preparar marcapasos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ Taquicardia sinusal ~150 lpm -->
+  <div class="h-sec" style="margin-bottom:6px;margin-top:18px">③ Taquicardia sinusal — FC ~150 lpm (2 cuadrados grandes)</div>
+  <div class="ecg-paper">
+    <div class="ecg-paper-header">
+      <span>Taquicardia sinusal · FC ≈ 150 lpm · Respuesta fisiológica</span>
+      <span style="font-size:9px;opacity:.7">V5</span>
+    </div>
+    <div style="padding:8px 10px 4px;position:relative;">
+      <svg class="ecg-svg" viewBox="0 0 700 120" preserveAspectRatio="xMidYMid meet">
+        <rect x="8" y="8" width="680" height="98" fill="#fdf6e3"/>
+        <g stroke="#ead8b0" stroke-width=".4">
+          <line x1="28" y1="8" x2="28" y2="106"/><line x1="48" y1="8" x2="48" y2="106"/><line x1="68" y1="8" x2="68" y2="106"/><line x1="88" y1="8" x2="88" y2="106"/>
+          <line x1="128" y1="8" x2="128" y2="106"/><line x1="148" y1="8" x2="148" y2="106"/><line x1="168" y1="8" x2="168" y2="106"/><line x1="188" y1="8" x2="188" y2="106"/>
+          <line x1="228" y1="8" x2="228" y2="106"/><line x1="248" y1="8" x2="248" y2="106"/><line x1="268" y1="8" x2="268" y2="106"/><line x1="288" y1="8" x2="288" y2="106"/>
+          <line x1="328" y1="8" x2="328" y2="106"/><line x1="348" y1="8" x2="348" y2="106"/><line x1="368" y1="8" x2="368" y2="106"/><line x1="388" y1="8" x2="388" y2="106"/>
+          <line x1="428" y1="8" x2="428" y2="106"/><line x1="448" y1="8" x2="448" y2="106"/><line x1="468" y1="8" x2="468" y2="106"/><line x1="488" y1="8" x2="488" y2="106"/>
+          <line x1="528" y1="8" x2="528" y2="106"/><line x1="548" y1="8" x2="548" y2="106"/><line x1="568" y1="8" x2="568" y2="106"/><line x1="588" y1="8" x2="588" y2="106"/>
+          <line x1="628" y1="8" x2="628" y2="106"/><line x1="648" y1="8" x2="648" y2="106"/><line x1="668" y1="8" x2="668" y2="106"/>
+          <line x1="8" y1="28" x2="688" y2="28"/><line x1="8" y1="48" x2="688" y2="48"/><line x1="8" y1="78" x2="688" y2="78"/>
+        </g>
+        <g stroke="#c8a87a" stroke-width="1.2">
+          <line x1="8" y1="8" x2="8" y2="106"/><line x1="108" y1="8" x2="108" y2="106"/><line x1="208" y1="8" x2="208" y2="106"/>
+          <line x1="308" y1="8" x2="308" y2="106"/><line x1="408" y1="8" x2="408" y2="106"/><line x1="508" y1="8" x2="508" y2="106"/>
+          <line x1="608" y1="8" x2="608" y2="106"/><line x1="688" y1="8" x2="688" y2="106"/>
+          <line x1="8" y1="8" x2="688" y2="8"/><line x1="8" y1="58" x2="688" y2="58"/><line x1="8" y1="106" x2="688" y2="106"/>
+        </g>
+        <!-- Shade first 2 squares between peaks -->
+        <rect x="48" y="8" width="100" height="98" fill="rgba(217,58,39,.06)"/>
+        <rect x="148" y="8" width="100" height="98" fill="rgba(217,58,39,.04)"/>
+
+        <!-- TACHYCARDIA — beats every ~100px (2 big squares) -->
+        <polyline fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"
+          points="8,58 18,56 24,50 30,56 34,58 40,58 42,57 44,61 46,8 48,64 50,58 54,54 62,48 70,54 76,58
+                  88,56 94,50 100,56 104,58 110,58 112,57 114,61 116,8 118,64 120,58 124,54 132,48 140,54 146,58
+                  158,56 164,50 170,56 174,58 180,58 182,57 184,61 186,8 188,64 190,58 194,54 202,48 210,54 216,58
+                  228,56 234,50 240,56 244,58 250,58 252,57 254,61 256,8 258,64 260,58 264,54 272,48 280,54 286,58
+                  298,56 304,50 310,56 314,58 320,58 322,57 324,61 326,8 328,64 330,58 334,54 342,48 350,54 356,58
+                  368,56 374,50 380,56 384,58 390,58 392,57 394,61 396,8 398,64 400,58 404,54 412,48 420,54 426,58
+                  438,56 444,50 450,56 454,58 460,58 462,57 464,61 466,8 468,64 470,58 474,54 482,48 490,54 496,58
+                  508,56 514,50 520,56 524,58 530,58 532,57 534,61 536,8 538,64 540,58 544,54 552,48 560,54 566,58
+                  578,56 584,50 590,56 594,58 600,58 602,57 604,61 606,8 608,64 610,58 614,54 622,48 630,54 636,58
+                  648,56 654,50 660,56 664,58 670,58 672,57 674,61 676,8 678,64 680,58 688,58"/>
+
+        <!-- Measurement first 2 squares -->
+        <text x="98" y="22" font-family="DM Mono,monospace" font-size="11" text-anchor="middle" fill="#d93a27" font-weight="bold">1</text>
+        <text x="198" y="22" font-family="DM Mono,monospace" font-size="11" text-anchor="middle" fill="#d93a27" font-weight="bold">2</text>
+
+        <line x1="46" y1="98" x2="246" y2="98" stroke="#d93a27" stroke-width="1.5" marker-end="url(#aR)" marker-start="url(#aRb)"/>
+        <text x="146" y="95" font-family="DM Mono,monospace" font-size="8" text-anchor="middle" fill="#d93a27">2 cuadrados → 300÷2 = 150 lpm</text>
+
+        <!-- Result -->
+        <rect x="526" y="16" width="155" height="42" rx="8" fill="#111318"/>
+        <text x="604" y="35" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" fill="rgba(184,224,0,.7)">FC = 300 ÷ 2</text>
+        <text x="604" y="50" font-family="Fraunces,serif" font-size="20" text-anchor="middle" fill="#b8e000" font-weight="900">150 lpm ⚠</text>
+
+        <text x="16" y="20" font-family="Fraunces,serif" font-size="10" fill="#5a3a1a" font-weight="700">V5</text>
+      </svg>
+      <!-- HOTSPOT TRAMPA FLUTTER -->
+      <div style="position:absolute;inset:0;pointer-events:none;">
+        <div class="hs red tip-below" style="position:absolute;left:77%;top:8%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">⚠</div>
+          <div class="hs-tip tip-left">
+            <span class="tip-title">FC = 150 exacta: trampa clínica</span>
+            FC exactamente 150 lpm puede ser:<br>
+            → Taquicardia sinusal<br>
+            → <strong>Flutter auricular 2:1</strong> (más urgente)<br>
+            <span class="tip-warn">Busca ondas F en dientes de sierra en DII/aVF</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALCULADORA -->
+  <div class="calc-box" style="margin-top:16px">
+    <div class="h-sec" style="margin-bottom:8px">🧮 Practica el cálculo</div>
+    <div style="font-size:13px;color:var(--ink2);margin-bottom:12px">Ingresa cuántos cuadrados grandes hay entre dos QRS en tu trazado:</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-family:var(--ff-m);font-size:11px;color:var(--ink2)">Cuadrados grandes R–R:</span>
+      <input class="calc-inp" type="number" id="sqInput" min="1" max="12" placeholder="ej: 4">
+      <button class="calc-btn" onclick="calcFC()">Calcular →</button>
+    </div>
+    <div class="calc-result" id="calcResult"></div>
+  </div>
+
+  <!-- SECUENCIA MÁGICA -->
+  <div style="margin-top:14px">
+    <div class="h-sec" style="margin-bottom:8px">⚡ Secuencia mágica — memorízala</div>
+    <div style="background:var(--ink);border-radius:var(--r2);padding:14px;overflow-x:auto">
+      <svg width="100%" viewBox="0 0 650 76" preserveAspectRatio="xMidYMid meet">
+        <rect x="2" y="2" width="94" height="72" rx="8" fill="#1a2240"/>
+        <rect x="110" y="2" width="94" height="72" rx="8" fill="#1a2240"/>
+        <rect x="218" y="2" width="94" height="72" rx="8" fill="#1a2240"/>
+        <rect x="326" y="2" width="94" height="72" rx="8" fill="#1a2240"/>
+        <rect x="434" y="2" width="94" height="72" rx="8" fill="#1a2240"/>
+        <rect x="542" y="2" width="104" height="72" rx="8" fill="#1a2240"/>
+        <text x="49" y="22" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" fill="rgba(255,255,255,.4)">1 □ grande</text>
+        <text x="157" y="22" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" fill="rgba(255,255,255,.4)">2 □ grandes</text>
+        <text x="265" y="22" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" fill="rgba(255,255,255,.4)">3 □ grandes</text>
+        <text x="373" y="22" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" fill="rgba(255,255,255,.4)">4 □ grandes</text>
+        <text x="481" y="22" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" fill="rgba(255,255,255,.4)">5 □ grandes</text>
+        <text x="594" y="22" font-family="DM Mono,monospace" font-size="9" text-anchor="middle" fill="rgba(255,255,255,.4)">6 □ grandes</text>
+        <text x="49"  y="58" font-family="Fraunces,serif" font-size="22" text-anchor="middle" fill="#b8e000" font-weight="900">300</text>
+        <text x="157" y="58" font-family="Fraunces,serif" font-size="22" text-anchor="middle" fill="#b8e000" font-weight="900">150</text>
+        <text x="265" y="58" font-family="Fraunces,serif" font-size="22" text-anchor="middle" fill="#b8e000" font-weight="900">100</text>
+        <text x="373" y="58" font-family="Fraunces,serif" font-size="22" text-anchor="middle" fill="#b8e000" font-weight="900">75</text>
+        <text x="481" y="58" font-family="Fraunces,serif" font-size="22" text-anchor="middle" fill="#b8e000" font-weight="900">60</text>
+        <text x="594" y="58" font-family="Fraunces,serif" font-size="22" text-anchor="middle" fill="#b8e000" font-weight="900">50</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ SLIDE 3 · MÉTODO F·R·E·C ══════ -->
+<section class="slide" data-s="3">
+  <div class="step-header">
+    <div class="sh-num">03</div>
+    <div class="sh-body">
+      <span class="sh-tag">Objetivo 3 · Método sistemático</span>
+      <div class="sh-title">F·R·E·C: lee cualquier ECG en 60 segundos</div>
+    </div>
+    <div class="sh-obj">Obj. 3 ✓</div>
+  </div>
+
+  <p class="lead" style="margin-bottom:14px">Un ECG bien leído sigue siempre el mismo orden. <strong>F·R·E·C</strong> garantiza que no te saltas nada urgente. Toca cada bloque para expandirlo.</p>
+
+  <div class="mnemo">
+    <div class="mn-hd">🧠 F·R·E·C — Los 4 bloques esenciales del ECG</div>
+    <div class="mn-body">
+      <div class="mn-row">
+        <div class="mn-L">F</div>
+        <div class="mn-c">
+          <div class="mn-w">Frecuencia Cardíaca</div>
+          <div class="mn-d"><strong>FC = 300 / N° cuadrados grandes R–R</strong>. Irregular → cuenta QRS en 6 seg × 10. Siempre primero.</div>
+          <span class="mn-v">Normal: 60–100 lpm</span>
+        </div>
+      </div>
+      <div class="mn-row">
+        <div class="mn-L">R</div>
+        <div class="mn-c">
+          <div class="mn-w">Ritmo + Ondas (P, PR, QRS)</div>
+          <div class="mn-d">¿Ritmo sinusal? P+ antes de cada QRS · PR constante 3–5□ · QRS &lt;3□. Luego clasifica ancho vs estrecho.</div>
+          <span class="mn-v">Sinusal = sí · sí · sí (las 3)</span>
+        </div>
+      </div>
+      <div class="mn-row">
+        <div class="mn-L">E</div>
+        <div class="mn-c">
+          <div class="mn-w">Eje Eléctrico</div>
+          <div class="mn-d">¿DI y aVF positivos? = eje normal. En urgencias no te detengas aquí si hay cambios de ST.</div>
+          <span class="mn-v">DI(+) y aVF(+) = 0° a +90°</span>
+        </div>
+      </div>
+      <div class="mn-row">
+        <div class="mn-L">C</div>
+        <div class="mn-c">
+          <div class="mn-w">Cambios: ST · T · Q · QT</div>
+          <div class="mn-d">¿ST elevado o deprimido? ¿T invertida o picuda simétrica? ¿Ondas Q patológicas? ¿QTc largo? <strong>Aquí está la urgencia.</strong></div>
+          <span class="mn-v">ST alterado = actuar ya</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BAV COMPLETO CON HOTSPOTS -->
+  <div class="h-sec" style="margin-bottom:6px;margin-top:18px">Ejemplo aplicado — BAV completo: toca los señalizadores</div>
+  <div class="hs-hint">👆 Los colores te guían: rojo = P auricular · naranja = QRS ventricular</div>
+
+  <div class="ecg-paper">
+    <div class="ecg-paper-header">
+      <span>BAV Completo (3° grado) · Disociación AV · Escape ventricular</span>
+      <span style="font-size:9px;opacity:.7">DII</span>
+    </div>
+    <div style="padding:8px 10px 4px;position:relative;">
+      <svg class="ecg-svg" viewBox="0 0 700 140" preserveAspectRatio="xMidYMid meet">
+        <rect x="8" y="8" width="680" height="115" fill="#fdf6e3"/>
+        <g stroke="#ead8b0" stroke-width=".4">
+          <line x1="28" y1="8" x2="28" y2="123"/><line x1="48" y1="8" x2="48" y2="123"/><line x1="68" y1="8" x2="68" y2="123"/><line x1="88" y1="8" x2="88" y2="123"/>
+          <line x1="128" y1="8" x2="128" y2="123"/><line x1="148" y1="8" x2="148" y2="123"/><line x1="168" y1="8" x2="168" y2="123"/><line x1="188" y1="8" x2="188" y2="123"/>
+          <line x1="228" y1="8" x2="228" y2="123"/><line x1="248" y1="8" x2="248" y2="123"/><line x1="268" y1="8" x2="268" y2="123"/><line x1="288" y1="8" x2="288" y2="123"/>
+          <line x1="328" y1="8" x2="328" y2="123"/><line x1="348" y1="8" x2="348" y2="123"/><line x1="368" y1="8" x2="368" y2="123"/><line x1="388" y1="8" x2="388" y2="123"/>
+          <line x1="428" y1="8" x2="428" y2="123"/><line x1="448" y1="8" x2="448" y2="123"/><line x1="468" y1="8" x2="468" y2="123"/><line x1="488" y1="8" x2="488" y2="123"/>
+          <line x1="528" y1="8" x2="528" y2="123"/><line x1="548" y1="8" x2="548" y2="123"/><line x1="568" y1="8" x2="568" y2="123"/><line x1="588" y1="8" x2="588" y2="123"/>
+          <line x1="628" y1="8" x2="628" y2="123"/><line x1="648" y1="8" x2="648" y2="123"/><line x1="668" y1="8" x2="668" y2="123"/>
+          <line x1="8" y1="28" x2="688" y2="28"/><line x1="8" y1="48" x2="688" y2="48"/><line x1="8" y1="88" x2="688" y2="88"/>
+        </g>
+        <g stroke="#c8a87a" stroke-width="1.2">
+          <line x1="8" y1="8" x2="8" y2="123"/><line x1="108" y1="8" x2="108" y2="123"/><line x1="208" y1="8" x2="208" y2="123"/>
+          <line x1="308" y1="8" x2="308" y2="123"/><line x1="408" y1="8" x2="408" y2="123"/><line x1="508" y1="8" x2="508" y2="123"/>
+          <line x1="608" y1="8" x2="608" y2="123"/><line x1="688" y1="8" x2="688" y2="123"/>
+          <line x1="8" y1="8" x2="688" y2="8"/><line x1="8" y1="68" x2="688" y2="68"/><line x1="8" y1="123" x2="688" y2="123"/>
+        </g>
+        <!-- Shade P wave zones -->
+        <rect x="22" y="55" width="50" height="26" fill="rgba(217,58,39,.12)" rx="2"/>
+        <rect x="155" y="55" width="50" height="26" fill="rgba(217,58,39,.12)" rx="2"/>
+        <rect x="288" y="55" width="50" height="26" fill="rgba(217,58,39,.12)" rx="2"/>
+        <rect x="421" y="55" width="50" height="26" fill="rgba(217,58,39,.12)" rx="2"/>
+        <rect x="554" y="55" width="50" height="26" fill="rgba(217,58,39,.12)" rx="2"/>
+        <!-- Shade QRS zones -->
+        <rect x="100" y="8" width="50" height="115" fill="rgba(217,119,6,.1)" rx="2"/>
+        <rect x="390" y="8" width="50" height="115" fill="rgba(217,119,6,.1)" rx="2"/>
+        <rect x="670" y="8" width="18" height="115" fill="rgba(217,119,6,.1)" rx="2"/>
+
+        <!-- P WAVES (auricles, regular every ~133px) -->
+        <polyline fill="none" stroke="#cc2200" stroke-width="1.8" stroke-linecap="round"
+          points="8,68 20,68 26,63 34,54 42,63 48,68 70,68 82,68"/>
+        <polyline fill="none" stroke="#cc2200" stroke-width="1.8" stroke-linecap="round"
+          points="152,68 158,63 166,54 174,63 180,68 200,68 212,68"/>
+        <polyline fill="none" stroke="#cc2200" stroke-width="1.8" stroke-linecap="round"
+          points="285,68 291,63 299,54 307,63 313,68 333,68 345,68"/>
+        <polyline fill="none" stroke="#cc2200" stroke-width="1.8" stroke-linecap="round"
+          points="418,68 424,63 432,54 440,63 446,68 466,68 478,68"/>
+        <polyline fill="none" stroke="#cc2200" stroke-width="1.8" stroke-linecap="round"
+          points="551,68 557,63 565,54 573,63 579,68 599,68 611,68"/>
+
+        <!-- WIDE QRS ESCAPE (ventricular, red, slow, misaligned with P) -->
+        <polyline fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"
+          points="82,68 100,68 104,72 108,78 112,8 116,82 120,68 126,62 138,56 152,62 162,68 200,68"/>
+        <polyline fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"
+          points="345,68 380,68 384,72 388,78 392,8 396,82 400,68 406,62 418,56 432,62 442,68 478,68"/>
+        <polyline fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"
+          points="611,68 648,68 652,72 656,78 660,8 664,82 668,68 676,62 684,56 688,62 688,68"/>
+
+        <!-- P labels -->
+        <text x="34" y="50" font-family="DM Mono,monospace" font-size="9" fill="#cc2200" font-weight="bold">P</text>
+        <text x="167" y="50" font-family="DM Mono,monospace" font-size="9" fill="#cc2200" font-weight="bold">P</text>
+        <text x="300" y="50" font-family="DM Mono,monospace" font-size="9" fill="#cc2200" font-weight="bold">P</text>
+        <text x="433" y="50" font-family="DM Mono,monospace" font-size="9" fill="#cc2200" font-weight="bold">P</text>
+        <text x="566" y="50" font-family="DM Mono,monospace" font-size="9" fill="#cc2200" font-weight="bold">P</text>
+
+        <!-- QRS labels -->
+        <text x="112" y="8" font-family="DM Mono,monospace" font-size="9" fill="#1a1a1a" font-weight="bold">QRS*</text>
+        <text x="392" y="8" font-family="DM Mono,monospace" font-size="9" fill="#1a1a1a" font-weight="bold">QRS*</text>
+        <text x="660" y="8" font-family="DM Mono,monospace" font-size="9" fill="#1a1a1a">QRS*</text>
+
+        <!-- Key label -->
+        <rect x="8" y="103" width="260" height="16" rx="4" fill="#111318"/>
+        <text x="14" y="115" font-family="DM Mono,monospace" font-size="8" fill="#cc2200">P: FC~80lpm</text>
+        <text x="80" y="115" font-family="DM Mono,monospace" font-size="8" fill="rgba(255,255,255,.4)"> | </text>
+        <text x="90" y="115" font-family="DM Mono,monospace" font-size="8" fill="#fbbf24">QRS*: FC~34lpm · INDEPENDIENTES</text>
+
+        <text x="16" y="22" font-family="Fraunces,serif" font-size="10" fill="#5a3a1a" font-weight="700">DII</text>
+      </svg>
+      <!-- HOTSPOTS BAV -->
+      <div style="position:absolute;inset:0;pointer-events:none;">
+        <div class="hs red" style="position:absolute;left:5%;top:38%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">P</div>
+          <div class="hs-tip tip-right">
+            <span class="tip-title">Ondas P auriculares</span>
+            La aurícula late a su propio ritmo.<br>
+            FC auricular ≈ 80 lpm (normal).<br>
+            Las P son regulares entre sí.<br>
+            <span class="tip-warn">El nodo AV está BLOQUEADO → P no llega al ventrículo</span>
+          </div>
+        </div>
+        <div class="hs amber" style="position:absolute;left:17%;top:5%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">VE</div>
+          <div class="hs-tip">
+            <span class="tip-title">QRS de escape ventricular</span>
+            El ventrículo genera su propio ritmo.<br>
+            QRS ANCHO (≥0.12s) → escape infranodal.<br>
+            FC ventricular ≈ 34 lpm → muy lenta.<br>
+            <span class="tip-warn">⚠ Escape ancho = menos estable · mayor urgencia</span>
+          </div>
+        </div>
+        <div class="hs red" style="position:absolute;left:50%;top:38%;pointer-events:all" onclick="toggleHS(this)">
+          <div class="hs-dot">≠</div>
+          <div class="hs-tip tip-left">
+            <span class="tip-title">Disociación AV</span>
+            La clave diagnóstica del BAV completo:<br>
+            P y QRS totalmente independientes.<br>
+            Ninguna P conduce al ventrículo.<br>
+            <span class="tip-warn">⚠ Atropina IV + preparar marcapasos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="alerta">
+    <div class="ai">🚨</div>
+    <div class="ab"><span class="at">Aplicando F·R·E·C en este trazado</span><strong>F:</strong> QRS 34 lpm (bradicardia extrema). <strong>R:</strong> P presente pero INDEPENDIENTE del QRS (disociación AV = BAV completo). <strong>E:</strong> Urgencia — no se detiene en el eje. <strong>C:</strong> QRS ancho → escape ventricular infranodal. Diagnóstico: BAV completo.</div>
+  </div>
+</section>
+
+<!-- ══════ SLIDE 4 · ATLAS DE PATRONES URGENTES ══════ -->
+<section class="slide" data-s="4">
+  <div class="step-header">
+    <div class="sh-num">04</div>
+    <div class="sh-body">
+      <span class="sh-tag">Objetivo 4 · Atlas de patrones</span>
+      <div class="sh-title">Los trazados que no puedes ignorar</div>
+    </div>
+    <div class="sh-obj">Obj. 4 ✓</div>
+  </div>
+  <p class="lead" style="margin-bottom:12px"><strong>Toca cada tarjeta</strong> para ver el patrón ampliado con zonas señalizadas.</p>
+
+  <div class="pattern-grid">
+    <!-- STEMI INFERIOR -->
+    <div class="pattern-card" onclick="togglePattern(this)">
+      <div class="pc-header urgent"><div><div class="pc-badge">🚨 URGENCIA</div><div class="pc-title">STEMI Inferior</div></div></div>
+      <div class="pc-body">
+        <div style="position:relative;padding:6px 8px;background:#fdf6e3;">
+          <svg width="100%" viewBox="0 0 320 90" style="display:block">
+            <g stroke="#ead8b0" stroke-width=".4"><line x1="0" y1="0" x2="0" y2="90"/><line x1="20" y1="0" x2="20" y2="90"/><line x1="40" y1="0" x2="40" y2="90"/><line x1="60" y1="0" x2="60" y2="90"/><line x1="80" y1="0" x2="80" y2="90"/><line x1="120" y1="0" x2="120" y2="90"/><line x1="140" y1="0" x2="140" y2="90"/><line x1="160" y1="0" x2="160" y2="90"/><line x1="180" y1="0" x2="180" y2="90"/><line x1="220" y1="0" x2="220" y2="90"/><line x1="240" y1="0" x2="240" y2="90"/><line x1="260" y1="0" x2="260" y2="90"/><line x1="280" y1="0" x2="280" y2="90"/><line x1="0" y1="18" x2="320" y2="18"/><line x1="0" y1="36" x2="320" y2="36"/><line x1="0" y1="54" x2="320" y2="54"/><line x1="0" y1="72" x2="320" y2="72"/></g>
+            <g stroke="#c8a87a" stroke-width="1"><line x1="0" y1="0" x2="0" y2="90"/><line x1="100" y1="0" x2="100" y2="90"/><line x1="200" y1="0" x2="200" y2="90"/><line x1="300" y1="0" x2="300" y2="90"/><line x1="0" y1="54" x2="320" y2="54"/></g>
+            <!-- ST elevation shading -->
+            <polygon points="55,54 100,30 140,54" fill="rgba(217,58,39,.2)" opacity=".8"/>
+            <!-- STEMI trace -->
+            <polyline fill="none" stroke="#cc2200" stroke-width="2" stroke-linecap="round"
+              points="0,54 12,54 16,50 20,44 24,50 28,54 38,54 44,54 46,52 48,58 50,8 52,64 54,54 56,42 70,32 85,26 100,32 112,42 120,54 150,54 165,54 170,50 174,44 178,50 182,54 192,54 194,52 196,58 198,8 200,64 202,54 204,42 218,32 233,26 248,32 260,42 268,54 298,54 320,54"/>
+            <text x="84" y="22" font-family="DM Mono,monospace" font-size="8" fill="#cc2200" font-weight="bold">ST↑ cúpula</text>
+            <line x1="90" y1="26" x2="90" y2="35" stroke="#cc2200" stroke-width="1"/>
+            <text x="4" y="12" font-family="Fraunces,serif" font-size="9" fill="#5a3a1a" font-weight="700">DII</text>
+          </svg>
+        </div>
+        <div class="pc-detail">
+          <strong>🔴 ST↑ CONVEXO (cúpula) en DII/DIII/aVF</strong><br>
+          Zona señalada = ST elevado sobre la línea isoeléctrica.<br>
+          Arteria: ACD (80%). Siempre pedir V4R.<br>
+          Reciprocidad: ST↓ en DI, aVL (imagen en espejo).<br>
+          <strong>⚠ IAM de VD → nitratos CONTRAINDICADOS</strong><br>
+          <em>Tiempo puerta-balón: &lt;90 min</em>
+        </div>
+      </div>
+    </div>
+
+    <!-- FA -->
+    <div class="pattern-card" onclick="togglePattern(this)">
+      <div class="pc-header warning"><div><div class="pc-badge">⚡ IMPORTANTE</div><div class="pc-title">Fibrilación Auricular</div></div></div>
+      <div class="pc-body">
+        <div style="padding:6px 8px;background:#fdf6e3;">
+          <svg width="100%" viewBox="0 0 320 90" style="display:block">
+            <g stroke="#ead8b0" stroke-width=".4"><line x1="20" y1="0" x2="20" y2="90"/><line x1="40" y1="0" x2="40" y2="90"/><line x1="60" y1="0" x2="60" y2="90"/><line x1="80" y1="0" x2="80" y2="90"/><line x1="120" y1="0" x2="120" y2="90"/><line x1="140" y1="0" x2="140" y2="90"/><line x1="160" y1="0" x2="160" y2="90"/><line x1="180" y1="0" x2="180" y2="90"/><line x1="220" y1="0" x2="220" y2="90"/><line x1="240" y1="0" x2="240" y2="90"/><line x1="260" y1="0" x2="260" y2="90"/><line x1="280" y1="0" x2="280" y2="90"/><line x1="0" y1="18" x2="320" y2="18"/><line x1="0" y1="36" x2="320" y2="36"/><line x1="0" y1="72" x2="320" y2="72"/></g>
+            <g stroke="#c8a87a" stroke-width="1"><line x1="0" y1="0" x2="0" y2="90"/><line x1="100" y1="0" x2="100" y2="90"/><line x1="200" y1="0" x2="200" y2="90"/><line x1="300" y1="0" x2="300" y2="90"/><line x1="0" y1="54" x2="320" y2="54"/></g>
+            <!-- Shade "no P" zone -->
+            <rect x="0" y="40" width="320" height="28" fill="rgba(217,58,39,.05)"/>
+            <!-- Fibrillation baseline (f waves) -->
+            <polyline fill="none" stroke="#999" stroke-width=".8"
+              points="0,54 4,52 8,56 12,53 16,57 20,54 24,52 28,56 32,53 36,57 40,54 44,52 48,56 52,53 56,57 60,54 64,52 68,56 72,53 76,57 80,54 84,52 88,56 92,53 96,57 100,54 104,52 108,56 112,53 116,57 120,54 124,52 128,56 132,53 136,57 140,54 144,52 148,56 152,53 156,57 160,54 164,52 168,56 172,53 176,57 180,54 184,52 188,56 192,53 196,57 200,54 204,52 208,56 212,53 216,57 220,54 224,52 228,56 232,53 236,57 240,54 244,52 248,56 252,53 256,57 260,54 264,52 268,56 272,53 276,57 280,54 284,52 288,56 292,53 296,57 300,54 304,52 308,56 312,53 316,57 320,54"/>
+            <!-- Irregular QRS -->
+            <polyline fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" points="12,54 14,52 16,57 18,8 20,62 22,54 28,50 36,46 44,52 52,54"/>
+            <polyline fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" points="70,54 72,52 74,57 76,8 78,62 80,54 86,50 94,46 102,52 110,54"/>
+            <polyline fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" points="126,54 128,52 130,57 132,8 134,62 136,54 142,50 150,46 158,52 166,54"/>
+            <polyline fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" points="188,54 190,52 192,57 194,8 196,62 198,54 204,50 212,46 220,52 228,54"/>
+            <polyline fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" points="254,54 256,52 258,57 260,8 262,62 264,54 270,50 278,46 286,52 294,54 320,54"/>
+            <!-- No P annotation -->
+            <text x="4" y="38" font-family="DM Mono,monospace" font-size="8" fill="#cc2200">sin P · f irregular</text>
+            <text x="4" y="12" font-family="Fraunces,serif" font-size="9" fill="#5a3a1a" font-weight="700">DII</text>
+            <text x="4" y="84" font-family="DM Mono,monospace" font-size="7" fill="#888">RR irregular · sin P · ondas f 400-600/min</text>
+          </svg>
+        </div>
+        <div class="pc-detail">
+          <strong>Zona sombreada = ausencia de onda P · línea caótica</strong><br>
+          Sin ondas P definibles. Ondas f 400–600/min. RR totalmente irregular.<br>
+          FA con &gt;150 lpm + compromiso hemodinámico → cardioversión.<br>
+          <strong>⚠ FA + WPW: NUNCA adenosina · digital · verapamilo</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLUTTER 2:1 -->
+    <div class="pattern-card" onclick="togglePattern(this)">
+      <div class="pc-header warning"><div><div class="pc-badge">⚠ TRAMPA CLÁSICA</div><div class="pc-title">Flutter 2:1 · FC = 150</div></div></div>
+      <div class="pc-body">
+        <div style="padding:6px 8px;background:#fdf6e3;">
+          <svg width="100%" viewBox="0 0 320 90" style="display:block">
+            <g stroke="#ead8b0" stroke-width=".4"><line x1="20" y1="0" x2="20" y2="90"/><line x1="40" y1="0" x2="40" y2="90"/><line x1="60" y1="0" x2="60" y2="90"/><line x1="80" y1="0" x2="80" y2="90"/><line x1="120" y1="0" x2="120" y2="90"/><line x1="140" y1="0" x2="140" y2="90"/><line x1="160" y1="0" x2="160" y2="90"/><line x1="180" y1="0" x2="180" y2="90"/><line x1="220" y1="0" x2="220" y2="90"/><line x1="240" y1="0" x2="240" y2="90"/><line x1="260" y1="0" x2="260" y2="90"/><line x1="280" y1="0" x2="280" y2="90"/><line x1="0" y1="18" x2="320" y2="18"/><line x1="0" y1="36" x2="320" y2="36"/><line x1="0" y1="72" x2="320" y2="72"/></g>
+            <g stroke="#c8a87a" stroke-width="1"><line x1="0" y1="0" x2="0" y2="90"/><line x1="100" y1="0" x2="100" y2="90"/><line x1="200" y1="0" x2="200" y2="90"/><line x1="300" y1="0" x2="300" y2="90"/><line x1="0" y1="54" x2="320" y2="54"/></g>
+            <!-- Shade F wave zones -->
+            <rect x="0" y="44" width="320" height="20" fill="rgba(217,119,6,.07)"/>
+            <!-- FLUTTER: regular sawtooth + QRS every 2 F waves -->
+            <polyline fill="none" stroke="#1a1a1a" stroke-width="1.8" stroke-linecap="round"
+              points="0,54 5,52 10,48 14,52 18,60 20,52 24,8 26,65 28,54 32,52 36,48 40,52 44,60 46,52 50,48 54,52 58,60
+                      60,52 64,8 66,65 68,54 72,52 76,48 80,52 84,60 86,52 90,48 94,52 98,60
+                      100,52 104,8 106,65 108,54 112,52 116,48 120,52 124,60 126,52 130,48 134,52 138,60
+                      140,52 144,8 146,65 148,54 152,52 156,48 160,52 164,60 166,52 170,48 174,52 178,60
+                      180,52 184,8 186,65 188,54 192,52 196,48 200,52 204,60 206,52 210,48 214,52 218,60
+                      220,52 224,8 226,65 228,54 232,52 236,48 240,52 244,60 246,52 250,48 254,52 258,60
+                      260,52 264,8 266,65 268,54 272,52 276,48 280,52 284,60 286,52 290,48 294,52 298,60
+                      300,52 304,8 306,65 308,54 314,52 320,52"/>
+            <text x="4" y="38" font-family="DM Mono,monospace" font-size="8" fill="#d97706" font-weight="bold">ondas F diente sierra</text>
+            <text x="4" y="12" font-family="Fraunces,serif" font-size="9" fill="#5a3a1a" font-weight="700">DII</text>
+            <text x="4" y="84" font-family="DM Mono,monospace" font-size="7" fill="#888">F: 300/min · conducción 2:1 → FC 150 lpm EXACTA</text>
+          </svg>
+        </div>
+        <div class="pc-detail">
+          <strong>Zona sombreada = ondas F en "dientes de sierra"</strong><br>
+          FC exactamente 150 lpm → siempre sospechar Flutter 2:1.<br>
+          Las F pueden ocultarse dentro del QRS y la onda T.<br>
+          <strong>Adenosina IV bloquea el NAV y revela las ondas F.</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- HIPERCALEMIA -->
+    <div class="pattern-card" onclick="togglePattern(this)">
+      <div class="pc-header urgent"><div><div class="pc-badge">🚨 URGENCIA</div><div class="pc-title">Hipercalemia (K⁺ alto)</div></div></div>
+      <div class="pc-body">
+        <div style="padding:6px 8px;background:#fdf6e3;">
+          <svg width="100%" viewBox="0 0 320 90" style="display:block">
+            <g stroke="#ead8b0" stroke-width=".4"><line x1="20" y1="0" x2="20" y2="90"/><line x1="40" y1="0" x2="40" y2="90"/><line x1="60" y1="0" x2="60" y2="90"/><line x1="80" y1="0" x2="80" y2="90"/><line x1="120" y1="0" x2="120" y2="90"/><line x1="140" y1="0" x2="140" y2="90"/><line x1="160" y1="0" x2="160" y2="90"/><line x1="180" y1="0" x2="180" y2="90"/><line x1="220" y1="0" x2="220" y2="90"/><line x1="240" y1="0" x2="240" y2="90"/><line x1="260" y1="0" x2="260" y2="90"/><line x1="280" y1="0" x2="280" y2="90"/><line x1="0" y1="18" x2="320" y2="18"/><line x1="0" y1="36" x2="320" y2="36"/><line x1="0" y1="72" x2="320" y2="72"/></g>
+            <g stroke="#c8a87a" stroke-width="1"><line x1="0" y1="0" x2="0" y2="90"/><line x1="100" y1="0" x2="100" y2="90"/><line x1="200" y1="0" x2="200" y2="90"/><line x1="300" y1="0" x2="300" y2="90"/><line x1="0" y1="54" x2="320" y2="54"/></g>
+            <!-- Shade T wave zones -->
+            <polygon points="48,54 56,20 64,54" fill="rgba(217,58,39,.25)"/>
+            <polygon points="148,54 156,20 164,54" fill="rgba(217,58,39,.25)"/>
+            <polygon points="248,54 256,20 264,54" fill="rgba(217,58,39,.25)"/>
+            <!-- Wide QRS + tall T -->
+            <polyline fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"
+              points="0,54 14,54 16,54 18,58 20,64 22,8 24,68 26,54 30,58 36,66 44,68 52,66 58,58 62,54
+                      64,54 66,20 68,10 70,20 72,52 74,54 90,54 96,54
+                      114,54 116,54 118,58 120,64 122,8 124,68 126,54 130,58 136,66 144,68 152,66 158,58 162,54
+                      164,54 166,20 168,10 170,20 172,52 174,54 190,54 196,54
+                      214,54 216,54 218,58 220,64 222,8 224,68 226,54 230,58 236,66 244,68 252,66 258,58 262,54
+                      264,54 266,20 268,10 270,20 272,52 274,54 290,54 296,54 320,54"/>
+            <text x="46" y="14" font-family="DM Mono,monospace" font-size="8" fill="#cc2200" font-weight="bold">T alta</text>
+            <text x="4" y="12" font-family="Fraunces,serif" font-size="9" fill="#5a3a1a" font-weight="700">DII</text>
+            <text x="4" y="84" font-family="DM Mono,monospace" font-size="7" fill="#888">T picuda simétrica · QRS ancho · sin P visible</text>
+          </svg>
+        </div>
+        <div class="pc-detail">
+          <strong>Zona sombreada = T picuda simétrica (signo más precoz)</strong><br>
+          K⁺ &gt;5.5 mEq/L. Progresión: T alta → P desaparece → QRS ancho → FV.<br>
+          Frecuente: falla renal, acidosis, diuréticos ahorradores K⁺.<br>
+          <strong>Gluconato de Ca²⁺ IV protege el miocardio de inmediato.</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- BRD -->
+    <div class="pattern-card" onclick="togglePattern(this)">
+      <div class="pc-header normal"><div><div class="pc-badge">📊 CONDUCCIÓN</div><div class="pc-title">Bloqueo Rama Derecha (BRD)</div></div></div>
+      <div class="pc-body">
+        <div style="padding:6px 8px;background:#fdf6e3;">
+          <svg width="100%" viewBox="0 0 320 90" style="display:block">
+            <g stroke="#ead8b0" stroke-width=".4"><line x1="20" y1="0" x2="20" y2="90"/><line x1="40" y1="0" x2="40" y2="90"/><line x1="60" y1="0" x2="60" y2="90"/><line x1="80" y1="0" x2="80" y2="90"/><line x1="120" y1="0" x2="120" y2="90"/><line x1="140" y1="0" x2="140" y2="90"/><line x1="160" y1="0" x2="160" y2="90"/><line x1="180" y1="0" x2="180" y2="90"/><line x1="220" y1="0" x2="220" y2="90"/><line x1="240" y1="0" x2="240" y2="90"/><line x1="260" y1="0" x2="260" y2="90"/><line x1="280" y1="0" x2="280" y2="90"/><line x1="0" y1="18" x2="320" y2="18"/><line x1="0" y1="36" x2="320" y2="36"/><line x1="0" y1="72" x2="320" y2="72"/></g>
+            <g stroke="#c8a87a" stroke-width="1"><line x1="0" y1="0" x2="0" y2="90"/><line x1="100" y1="0" x2="100" y2="90"/><line x1="200" y1="0" x2="200" y2="90"/><line x1="300" y1="0" x2="300" y2="90"/><line x1="0" y1="54" x2="320" y2="54"/></g>
+            <!-- Shade R' zone (second peak) -->
+            <rect x="44" y="8" width="40" height="82" fill="rgba(16,69,200,.08)"/>
+            <rect x="194" y="8" width="40" height="82" fill="rgba(16,69,200,.08)"/>
+            <!-- rSR' BRD pattern in V1 -->
+            <polyline fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"
+              points="0,54 12,54 16,50 20,40 24,50 28,54 30,58 32,64 34,66 38,64 42,54 46,36 54,8 58,36 62,72 66,76 70,72 72,54 80,52 88,46 96,54 108,54
+                      124,54 128,50 132,40 136,50 140,54 142,58 144,64 146,66 150,64 154,54 158,36 166,8 170,36 174,72 178,76 182,72 184,54 192,52 200,46 208,54 220,54
+                      236,54 240,50 244,40 248,50 252,54 254,58 256,64 258,66 262,64 266,54 270,36 278,8 282,36 286,72 290,76 294,72 296,54 304,52 312,46 320,54"/>
+            <!-- Labels r, S, R' -->
+            <text x="22" y="38" font-family="DM Mono,monospace" font-size="8" fill="#888">r</text>
+            <text x="32" y="72" font-family="DM Mono,monospace" font-size="8" fill="#888">S</text>
+            <text x="54" y="8" font-family="DM Mono,monospace" font-size="9" fill="#1045c8" font-weight="bold">R'</text>
+            <text x="4" y="12" font-family="Fraunces,serif" font-size="9" fill="#5a3a1a" font-weight="700">V1</text>
+            <text x="4" y="84" font-family="DM Mono,monospace" font-size="7" fill="#888">rSR' "oreja de conejo" · QRS &gt;0.12s · S ancha DI/V6</text>
+          </svg>
+        </div>
+        <div class="pc-detail">
+          <strong>Zona sombreada = R' ("oreja de conejo" segunda orejeada en V1)</strong><br>
+          QRS &gt;0.12s + rSR' en V1-V2 + S ancha en DI, V5, V6.<br>
+          BRD puede verse en personas sanas.<br>
+          <strong>BRD NUEVO: descartar TEP o IAM anteroseptal.</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- BRI -->
+    <div class="pattern-card" onclick="togglePattern(this)">
+      <div class="pc-header urgent"><div><div class="pc-badge">🚨 STEMI EQUIV.</div><div class="pc-title">Bloqueo Rama Izquierda NUEVO</div></div></div>
+      <div class="pc-body">
+        <div style="padding:6px 8px;background:#fdf6e3;">
+          <svg width="100%" viewBox="0 0 320 90" style="display:block">
+            <g stroke="#ead8b0" stroke-width=".4"><line x1="20" y1="0" x2="20" y2="90"/><line x1="40" y1="0" x2="40" y2="90"/><line x1="60" y1="0" x2="60" y2="90"/><line x1="80" y1="0" x2="80" y2="90"/><line x1="120" y1="0" x2="120" y2="90"/><line x1="140" y1="0" x2="140" y2="90"/><line x1="160" y1="0" x2="160" y2="90"/><line x1="180" y1="0" x2="180" y2="90"/><line x1="220" y1="0" x2="220" y2="90"/><line x1="240" y1="0" x2="240" y2="90"/><line x1="260" y1="0" x2="260" y2="90"/><line x1="280" y1="0" x2="280" y2="90"/><line x1="0" y1="18" x2="320" y2="18"/><line x1="0" y1="36" x2="320" y2="36"/><line x1="0" y1="72" x2="320" y2="72"/></g>
+            <g stroke="#c8a87a" stroke-width="1"><line x1="0" y1="0" x2="0" y2="90"/><line x1="100" y1="0" x2="100" y2="90"/><line x1="200" y1="0" x2="200" y2="90"/><line x1="300" y1="0" x2="300" y2="90"/><line x1="0" y1="54" x2="320" y2="54"/></g>
+            <!-- Shade wide QRS zone -->
+            <rect x="8" y="8" width="80" height="82" fill="rgba(217,58,39,.08)"/>
+            <!-- BRI pattern in V5-V6: wide R monophasic, no Q, ST dep, T inv -->
+            <polyline fill="none" stroke="#cc2200" stroke-width="2.2" stroke-linecap="round"
+              points="0,54 8,54 10,54 12,52 16,44 22,34 28,22 34,14 40,22 46,34 52,44 56,52 58,54
+                      62,60 66,66 68,68 72,66 76,62 80,58 84,54
+                      92,54 108,54 120,52 128,44 134,34 140,22 146,14 152,22 158,34 164,44 168,52 170,54
+                      174,60 178,66 180,68 184,66 188,62 192,58 196,54 210,54 220,52 228,44 234,34 240,22 246,14 252,22 258,34 264,44 268,52 270,54 274,60 278,66 280,68 284,66 288,62 292,58 296,54 320,54"/>
+            <text x="26" y="12" font-family="DM Mono,monospace" font-size="8" fill="#cc2200" font-weight="bold">R ancha</text>
+            <text x="4" y="12" font-family="Fraunces,serif" font-size="9" fill="#5a3a1a" font-weight="700">V5</text>
+            <text x="4" y="84" font-family="DM Mono,monospace" font-size="7" fill="#888">R monofásica ancha · sin Q · ST dep · T inv</text>
+          </svg>
+        </div>
+        <div class="pc-detail">
+          <strong>Zona sombreada = R ancha monofásica sin Q en V5-V6</strong><br>
+          QRS &gt;0.12s + R monofásica V5-V6 + QS en V1 + sin Q en DI/aVL.<br>
+          <strong>BRI NUEVO + síntomas isquémicos = STEMI equivalente.</strong><br>
+          Activar protocolo reperfusión sin esperar troponinas.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ SLIDE 5 · IA CALCULA FC ══════ -->
+<section class="slide" data-s="5">
+  <div class="step-header">
+    <div class="sh-num">05</div>
+    <div class="sh-body">
+      <span class="sh-tag">IA Aplicada · Calculadora visual de FC</span>
+      <div class="sh-title">Sube tu ECG — la IA calcula la FC y te muestra dónde la detectó</div>
+    </div>
+    <div class="sh-obj">🤖 IA</div>
+  </div>
+
+  <p class="lead" style="margin-bottom:16px">Herramienta educativa: sube una foto de ECG real. La IA aplica el método <strong>300 ÷ cuadrados grandes</strong>, te muestra los picos R detectados directamente sobre la imagen y explica el cálculo paso a paso.</p>
+
+  <div class="ai-tool">
+    <div class="ai-tool-header">
+      <div class="ai-tool-icon">🤖</div>
+      <div>
+        <div class="ai-tool-title">Analizador ECG con IA</div>
+        <div class="ai-tool-sub">Detecta R · Cuenta cuadrados · Calcula FC · Dibuja sobre el trazado</div>
+      </div>
+      <div class="ai-badge">Claude Vision</div>
+    </div>
+
+    <div class="ai-tool-body">
+
+      <!-- Upload zone -->
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+        <div class="uz-icon">📷</div>
+        <div class="uz-title">Arrastra o toca para subir</div>
+        <div class="uz-sub">Foto del papel ECG · Pantalla de monitor · Impresión del trazado</div>
+        <div class="uz-formats">
+          <span class="uz-fmt">JPG</span><span class="uz-fmt">PNG</span>
+          <span class="uz-fmt">WEBP</span><span class="uz-fmt">Foto de cámara</span>
+        </div>
+      </div>
+
+      <!-- Preview: canvas overlay on image -->
+      <div class="preview-zone" id="previewZone">
+        <div class="preview-img-wrap" style="position:relative;padding:0;">
+          <img id="previewImg" src="" alt="ECG" style="display:block;max-width:100%;max-height:340px;width:100%;object-fit:contain;">
+          <canvas id="annotCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
+        </div>
+        <div id="annotLegend" style="display:none;padding:8px 12px;background:rgba(0,0,0,.7);border-radius:0 0 var(--r) var(--r);">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;font-family:var(--ff-m);font-size:10px;">
+            <span style="color:#ff4d4d">● Pico R detectado</span>
+            <span style="color:#4dffb8">⟵⟶ Distancia R–R</span>
+            <span style="color:#ffd700">□ Cuadrados grandes</span>
+          </div>
+        </div>
+        <div class="preview-controls">
+          <button class="ai-btn primary" id="analyzeBtn" onclick="analyzeECG()">
+            🔍 Analizar ECG y calcular FC
+          </button>
+          <button class="ai-btn secondary" onclick="resetTool()">🔄 Cambiar imagen</button>
+          <span style="font-family:var(--ff-m);font-size:10px;color:rgba(255,255,255,.35);margin-left:auto">Solo uso educativo</span>
+        </div>
+      </div>
+
+      <!-- Analysis panel -->
+      <div class="analysis-panel" id="analysisPanel">
+        <div class="ap-loading" id="apLoading">
+          <div class="ap-spinner"></div>
+          <div class="ap-loading-text" id="loadingText">Detectando picos R en el trazado…</div>
+        </div>
+        <div class="ap-results" id="apResults">
+
+          <!-- Step-by-step calculation -->
+          <div id="calcSteps" style="margin-bottom:16px;display:none;">
+            <div style="font-family:var(--ff-m);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px;">
+              📐 CÁLCULO PASO A PASO — Método 300 ÷ cuadrados
+            </div>
+            <div id="stepsWrap"></div>
+          </div>
+
+          <!-- FC result -->
+          <div class="fc-display">
+            <div class="fc-num" id="fcNum">—</div>
+            <div class="fc-unit">lpm (latidos por minuto)</div>
+            <div id="fcInterp"></div>
+          </div>
+
+          <!-- Findings -->
+          <div class="ap-section">
+            <div class="ap-section-title">Hallazgos detectados</div>
+            <div id="apFindings"></div>
+          </div>
+          <div id="apAlert" style="display:none"></div>
+          <div class="ap-disclaimer">
+            ⚠ Herramienta educativa. Las anotaciones sobre la imagen son aproximadas.<br>
+            No reemplaza la lectura manual. No usar para diagnóstico clínico real.
+          </div>
+        </div>
+        <div class="ap-error" id="apError" style="display:none">
+          <div style="font-size:24px;margin-bottom:8px">⚠️</div>
+          <div id="apErrorText">Error al analizar la imagen</div>
+        </div>
+      </div>
+
+      <!-- Hint -->
+      <div id="demoHint" style="margin-top:14px;padding:12px 16px;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);border-radius:var(--r);font-family:var(--ff-m);font-size:11px;color:rgba(255,255,255,.5);line-height:1.8;">
+        <span style="color:#c4b5fd">💡 Qué hace la IA sobre tu imagen:</span><br>
+        🔴 Marca los picos R con puntos rojos<br>
+        🟡 Dibuja la distancia R–R con una flecha dorada<br>
+        🟢 Señala cuántos cuadrados grandes contó<br>
+        📐 Muestra el cálculo: 300 ÷ N = FC lpm<br>
+        📋 Describe el ritmo, QRS y cambios del ST
+      </div>
+    </div>
+  </div>
+
+  <div class="ojo">
+    <div style="font-size:15px;flex-shrink:0">👁️</div>
+    <div class="ox"><strong>Importante:</strong> La IA puede fallar con imágenes de mala calidad, BRI sobre IAM o electrodos mal posicionados. Usa siempre tu lectura manual como referencia principal.</div>
+  </div>
+</section>
+
+
+<!-- ══════ SLIDE 6 · CHECKLIST ══════ -->
+<section class="slide" data-s="6">
+  <div class="step-header">
+    <div class="sh-num">06</div>
+    <div class="sh-body">
+      <span class="sh-tag">Objetivo 5 · Protocolo aplicado</span>
+      <div class="sh-title">Tu checklist de lectura — márcalo para practicar</div>
+    </div>
+    <div class="sh-obj">Obj. 5 ✓</div>
+  </div>
+
+  <p class="lead" style="margin-bottom:14px">8 pasos sistemáticos para cada ECG. Úsalo en el turno. Márcalos para internalizar el orden correcto.</p>
+
+  <div class="ck-prog" id="ckprog">Completado: 0 / 8</div>
+  <div id="ckwrap">
+    <div class="i-ck" onclick="doCheck(this)"><div class="i-box"></div><div><strong>1. Ritmo:</strong> ¿Sinusal o no sinusal?<span class="ck-sub">P+ en DII antes de cada QRS · PR constante 3–5 cuadraditos</span></div></div>
+    <div class="i-ck" onclick="doCheck(this)"><div class="i-box"></div><div><strong>2. FC:</strong> Calcular con 300 ÷ cuadrados grandes R–R<span class="ck-sub">Irregular → método 6 seg × 10</span></div></div>
+    <div class="i-ck" onclick="doCheck(this)"><div class="i-box"></div><div><strong>3. Eje:</strong> ¿DI y aVF positivos? (eje normal)<span class="ck-sub">En urgencia puedes continuar si no hay tiempo</span></div></div>
+    <div class="i-ck" onclick="doCheck(this)"><div class="i-box"></div><div><strong>4. Onda P:</strong> ¿Altura y anchura normales? ≤2.5mm<span class="ck-sub">Alta picuda = aurícula D · ancha bífida = aurícula I</span></div></div>
+    <div class="i-ck" onclick="doCheck(this)"><div class="i-box"></div><div><strong>5. Intervalo PR:</strong> ¿Entre 3 y 5 cuadraditos?<span class="ck-sub">Largo = BAV · Corto = preexcitación (WPW)</span></div></div>
+    <div class="i-ck" onclick="doCheck(this)"><div class="i-box"></div><div><strong>6. QRS:</strong> ¿Estrecho? ¿Morfología normal?<span class="ck-sub">Ancho → BRD (rSR' V1) o BRI (R monofásica V5-V6)</span></div></div>
+    <div class="i-ck" onclick="doCheck(this)"><div class="i-box"></div><div><strong>7. ST:</strong> ¿Isoeléctrico en todas las derivaciones?<span class="ck-sub">↑ convexo = STEMI · ↓ plano = isquemia subendocárdica</span></div></div>
+    <div class="i-ck" onclick="doCheck(this)"><div class="i-box"></div><div><strong>8. T y QT:</strong> ¿T positiva asimétrica? ¿QTc normal?<span class="ck-sub">T picuda simétrica = K⁺↑ · QTc &gt;500ms = riesgo arritmia</span></div></div>
+  </div>
+</section>
+
+<!-- ══════ SLIDE 7 · CASOS ══════ -->
+<section class="slide" data-s="7">
+  <div class="step-header">
+    <div class="sh-num">07</div>
+    <div class="sh-body">
+      <span class="sh-tag">Actividad práctica · Escenarios clínicos</span>
+      <div class="sh-title">Aplica F·R·E·C: decide en el turno</div>
+    </div>
+  </div>
+
+  <p class="lead" style="margin-bottom:14px">Dos casos. Usa el método antes de responder. No hay trampa.</p>
+
+  <div class="caso" id="c1">
+    <div class="caso-hd"><span class="caso-badge">Caso 1</span><span class="caso-title">Mujer 58a · Turno nocturno · Cama 4</span></div>
+    <div class="caso-body">
+      <div class="caso-data">
+        <strong>Paciente:</strong> Diabética tipo 2 · Ingresó por epigastralgia y náuseas<br>
+        <strong>Monitor:</strong> FC 105 lpm · PA 92/58 mmHg · Diaforesis profusa<br>
+        <strong>F → R → E →</strong> Ritmo sinusal · PR normal · QRS estrecho<br>
+        <strong>C → ST:</strong> <span style="color:var(--red);font-weight:700">ST↑ 2mm convexo en DII/DIII/aVF · ST↓ en DI/aVL (reciprocidad)</span>
+      </div>
+      <div class="caso-q">Aplicando el método: ¿cuál es tu PRIMERA acción?</div>
+      <div class="caso-opts" id="c1opts">
+        <button class="c-opt" onclick="rc('c1',this,0)"><span class="c-let">A</span>Dar antiácido IV — ingresó con epigastralgia</button>
+        <button class="c-opt" onclick="rc('c1',this,1)"><span class="c-let">B</span>Activar protocolo código infarto, 2 VVP, pedir V4R, avisar con SBAR</button>
+        <button class="c-opt" onclick="rc('c1',this,2)"><span class="c-let">C</span>Esperar resultado de troponinas para decidir</button>
+        <button class="c-opt" onclick="rc('c1',this,3)"><span class="c-let">D</span>Dar nitroglicerina SL por la hipotensión</button>
+      </div>
+      <div id="c1exp"></div>
+    </div>
+  </div>
+
+  <div class="caso" style="margin-top:14px" id="c2">
+    <div class="caso-hd"><span class="caso-badge">Caso 2</span><span class="caso-title">Hombre 67a · Post-operado día 2</span></div>
+    <div class="caso-body">
+      <div class="caso-data">
+        <strong>Monitor:</strong> FC 38 lpm · PA 80/50 mmHg · Confuso · Sudoroso<br>
+        <strong>F → R:</strong> P a 80 lpm · QRS a 38 lpm<br>
+        <strong>R:</strong> <span style="color:var(--red);font-weight:700">P independientes de los QRS (disociación AV) · QRS ancho 0.16s</span><br>
+        <strong>C:</strong> ST sin cambios · T normales
+      </div>
+      <div class="caso-q">¿Qué fármaco de primera línea preparas mientras llamas al médico?</div>
+      <div class="caso-opts" id="c2opts">
+        <button class="c-opt" onclick="rc('c2',this,0)"><span class="c-let">A</span>Amiodarona IV 300mg bolo</button>
+        <button class="c-opt" onclick="rc('c2',this,1)"><span class="c-let">B</span>Atropina IV 0.5mg + preparar marcapasos transcutáneo en paralelo</button>
+        <button class="c-opt" onclick="rc('c2',this,2)"><span class="c-let">C</span>Adenosina IV 6mg bolo rápido</button>
+        <button class="c-opt" onclick="rc('c2',this,3)"><span class="c-let">D</span>Betabloqueador IV para regularizar el ritmo</button>
+      </div>
+      <div id="c2exp"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ SLIDE 8 · EVALUACIÓN ══════ -->
+<section class="slide" data-s="8">
+  <div class="step-header">
+    <div class="sh-num">08</div>
+    <div class="sh-body">
+      <span class="sh-tag">Evaluación · 5 preguntas · Mínimo 80%</span>
+      <div class="sh-title">¿Dominaste los 5 objetivos?</div>
+    </div>
+  </div>
+  <p class="lead" style="margin-bottom:14px">Solo aplicación clínica. <span style="color:var(--red);font-weight:700">Aprobación: 80% (4/5).</span></p>
+
+  <div id="qwrap">
+    <div class="q-item" id="qi0">
+      <div class="q-num"><span class="chip ch-blue">P1</span> EL PAPEL</div>
+      <div class="q-txt">¿Cuánto tiempo representa un cuadrado GRANDE del papel ECG estándar a 25 mm/seg?</div>
+      <div class="q-opts">
+        <button class="q-opt" onclick="rq(0,this,0)"><span class="q-let">A</span>0.04 segundos (un cuadradito pequeño)</button>
+        <button class="q-opt" onclick="rq(0,this,1)"><span class="q-let">B</span>0.20 segundos (cinco cuadraditos pequeños)</button>
+        <button class="q-opt" onclick="rq(0,this,2)"><span class="q-let">C</span>0.12 segundos</button>
+        <button class="q-opt" onclick="rq(0,this,3)"><span class="q-let">D</span>1 segundo completo</button>
+      </div>
+      <div class="q-exp" id="qe0"><span class="qe-tag">💡 El papel del ECG</span>Cada cuadrado grande = <strong>5 cuadraditos × 0.04 seg = 0.20 seg</strong>. Por eso: FC = 300 ÷ cuadrados grandes entre R–R (ya que en 1 seg = 5 cuadrados grandes, en 300 cuadrados = 60 seg).</div>
+    </div>
+
+    <div class="q-item" id="qi1">
+      <div class="q-num"><span class="chip ch-red">P2</span> CÁLCULO FC</div>
+      <div class="q-txt">En el trazado hay 4 cuadrados grandes entre dos QRS. ¿Cuál es la FC?</div>
+      <div class="q-opts">
+        <button class="q-opt" onclick="rq(1,this,0)"><span class="q-let">A</span>100 lpm</button>
+        <button class="q-opt" onclick="rq(1,this,1)"><span class="q-let">B</span>75 lpm</button>
+        <button class="q-opt" onclick="rq(1,this,2)"><span class="q-let">C</span>60 lpm</button>
+        <button class="q-opt" onclick="rq(1,this,3)"><span class="q-let">D</span>150 lpm</button>
+      </div>
+      <div class="q-exp" id="qe1"><span class="qe-tag">💡 Fórmula</span><strong>300 ÷ 4 = 75 lpm.</strong> Secuencia mágica: 1→300, 2→150, 3→100, 4→75, 5→60, 6→50. Con 4 cuadrados la FC es 75 lpm, dentro del rango normal (60–100).</div>
+    </div>
+
+    <div class="q-item" id="qi2">
+      <div class="q-num"><span class="chip ch-amber">P3</span> RITMO</div>
+      <div class="q-ctx">FC 150 lpm exacta · QRS estrecho · Regular · Línea base con ondas pequeñas regulares en DII</div>
+      <div class="q-txt">¿Cuál es la hipótesis más urgente a descartar?</div>
+      <div class="q-opts">
+        <button class="q-opt" onclick="rq(2,this,0)"><span class="q-let">A</span>Taquicardia sinusal por estrés</button>
+        <button class="q-opt" onclick="rq(2,this,1)"><span class="q-let">B</span>Flutter auricular 2:1 — ondas F ocultas</button>
+        <button class="q-opt" onclick="rq(2,this,2)"><span class="q-let">C</span>TSVP por reentrada nodal</button>
+        <button class="q-opt" onclick="rq(2,this,3)"><span class="q-let">D</span>Fibrilación auricular rápida</button>
+      </div>
+      <div class="q-exp" id="qe2"><span class="qe-tag">💡 Flutter auricular</span>FC <strong>exactamente 150 lpm</strong> = la trampa clásica del flutter 2:1. La aurícula late a 300/min, cada 2 F se conduce 1 QRS → FC ventricular 150. Las F se ocultan en el QRS y la T. La taquicardia sinusal raramente llega a 150 lpm en reposo.</div>
+    </div>
+
+    <div class="q-item" id="qi3">
+      <div class="q-num"><span class="chip ch-teal">P4</span> CAMBIOS</div>
+      <div class="q-ctx">IAM inferior. V4R: ST↑ 1.5mm. Médico indica nitroglicerina SL.</div>
+      <div class="q-txt">¿Cuál es tu acción antes de administrar el nitrato?</div>
+      <div class="q-opts">
+        <button class="q-opt" onclick="rq(3,this,0)"><span class="q-let">A</span>Administrar inmediatamente, lo indicó el médico</button>
+        <button class="q-opt" onclick="rq(3,this,1)"><span class="q-let">B</span>Advertir: V4R↑ indica IAM de VD → nitratos contraindicados, dar volumen IV</button>
+        <button class="q-opt" onclick="rq(3,this,2)"><span class="q-let">C</span>Administrar solo si PA &gt; 120 mmHg</button>
+        <button class="q-opt" onclick="rq(3,this,3)"><span class="q-let">D</span>Subir la dosis porque la PA está baja</button>
+      </div>
+      <div class="q-exp" id="qe3"><span class="qe-tag">💡 IAM de VD</span>V4R ST↑ = VD comprometido. El VD isquémico depende críticamente de su precarga. Los nitratos son vasodilatadores venosos → reducen precarga → <strong>hipotensión severa y refractaria</strong>. El tratamiento del IAM de VD es volumen IV, no vasodilatadores.</div>
+    </div>
+
+    <div class="q-item" id="qi4">
+      <div class="q-num"><span class="chip ch-lime">P5</span> MÉTODO</div>
+      <div class="q-txt">Aplicando F·R·E·C: ¿en qué bloque se valoran el segmento ST, la onda T y el QT?</div>
+      <div class="q-opts">
+        <button class="q-opt" onclick="rq(4,this,0)"><span class="q-let">A</span>F — Frecuencia</button>
+        <button class="q-opt" onclick="rq(4,this,1)"><span class="q-let">B</span>C — Cambios (último bloque)</button>
+        <button class="q-opt" onclick="rq(4,this,2)"><span class="q-let">C</span>R — Ritmo</button>
+        <button class="q-opt" onclick="rq(4,this,3)"><span class="q-let">D</span>E — Eje</button>
+      </div>
+      <div class="q-exp" id="qe4"><span class="qe-tag">💡 Método F·R·E·C</span>El bloque <strong>C (Cambios)</strong> agrupa: ST (¿elevado o deprimido?), onda T (¿positiva, invertida o picuda simétrica?) y QT (¿largo?). Es el bloque que contiene las alertas de urgencia. Siempre se evalúa al final, después de haber verificado frecuencia, ritmo y eje.</div>
+    </div>
+
+    <div id="qscore"></div>
+  </div>
+</section>
+
+<!-- ══════ SLIDE 9 · CIERRE ══════ -->
+<section class="slide" data-s="9">
+  <span class="eyebrow">Módulo 1 completado · 2/20 horas</span>
+  <div class="h-big" style="margin-bottom:16px">Dominas las bases del ECG clínico</div>
+  <div class="score-box" id="finalScoreBox">
+    <div class="sc-num" id="fnum">—</div>
+    <div class="sc-sub" id="fsub">Completa la evaluación para ver tu resultado</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0" id="fbadges"></div>
+    <div style="font-size:12px;color:rgba(255,255,255,.65);max-width:360px;margin:0 auto 20px;line-height:1.65" id="fmsg"></div>
+    <button class="btn-lime" onclick="go(8)" id="fbutton">Ver evaluación →</button>
+  </div>
+  <hr>
+  <div class="h-sec" style="margin-bottom:10px">📦 Lo que aprendiste en este módulo</div>
+  <div class="g2" style="margin-bottom:20px">
+    <div class="card"><div style="font-family:var(--ff-m);font-size:9px;color:var(--ink2);margin-bottom:5px;letter-spacing:.08em;text-transform:uppercase">✅ Obj. 1 — Ondas</div><div style="font-size:13px;line-height:1.5">Identificas P, QRS, ST, T con sus valores normales sobre papel cuadriculado real.</div></div>
+    <div class="card"><div style="font-family:var(--ff-m);font-size:9px;color:var(--ink2);margin-bottom:5px;letter-spacing:.08em;text-transform:uppercase">✅ Obj. 2 — FC</div><div style="font-size:13px;line-height:1.5">Calculas 300 ÷ cuadrados grandes y reconoces bradi, taquicardia y la trampa del flutter.</div></div>
+    <div class="card"><div style="font-family:var(--ff-m);font-size:9px;color:var(--ink2);margin-bottom:5px;letter-spacing:.08em;text-transform:uppercase">✅ Obj. 3 — F·R·E·C</div><div style="font-size:13px;line-height:1.5">Aplicas el método sistemático de 4 bloques en cualquier trazado.</div></div>
+    <div class="card"><div style="font-family:var(--ff-m);font-size:9px;color:var(--ink2);margin-bottom:5px;letter-spacing:.08em;text-transform:uppercase">✅ Obj. 4 — Patrones</div><div style="font-size:13px;line-height:1.5">Reconoces STEMI, FA, flutter, hipercalemia, BRD y BRI con sus señales resaltadas.</div></div>
+    <div class="card"><div style="font-family:var(--ff-m);font-size:9px;color:var(--ink2);margin-bottom:5px;letter-spacing:.08em;text-transform:uppercase">✅ Obj. 5 — IA</div><div style="font-size:13px;line-height:1.5">Usas la calculadora IA para analizar fotos de ECG y comparar con tu lectura manual.</div></div>
+  </div>
+  <div class="promise">
+    <span class="pr-lbl">📌 En el Módulo 2 aprenderás…</span>
+    <ul class="pr-list">
+      <li><strong>Bloqueos de rama completos</strong> — BRD y BRI con criterios diagnósticos sobre el trazado</li>
+      <li><strong>BRI nuevo + síntomas isquémicos</strong> y los Criterios de Sgarbossa</li>
+      <li><strong>Las 3 arritmias que matan</strong> — FV, TV sin pulso y BAV completo en el monitor</li>
+    </ul>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+    <button class="btn-start" onclick="alert('Módulo 2 próximamente')">Módulo 2 → Bloqueos y Arritmias →</button>
+    <button class="btn-n btn-prev" onclick="go(8)">← Ver evaluación</button>
+  </div>
+</section>
+
+</div><!-- /main -->
+
+<div class="botnav">
+  <div class="bn-info" id="bninfo">Módulo 1 · Portada</div>
+  <div style="display:flex;gap:8px">
+    <button class="btn-n btn-prev" id="btnprev" onclick="prev()">← Anterior</button>
+    <button class="btn-n btn-next" id="btnnext" onclick="next()">Siguiente →</button>
+  </div>
+</div>
+
+<script>
+/* ══ NAVIGATION ══ */
+const TOTAL=10;
+const LABELS=['Portada','Ondas del ECG','Cálculo FC','Método F·R·E·C','Atlas de Patrones','IA Calcula FC','Checklist','Casos Clínicos','Evaluación','Cierre'];
+let cur=0;
+
+function go(n){
+  if(n<0||n>=TOTAL)return;
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.slide')[n].classList.add('active');
+  cur=n;
+  updateUI();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function next(){go(cur+1);}
+function prev(){go(cur-1);}
+
+function updateUI(){
+  document.querySelectorAll('.tdot').forEach((d,i)=>{
+    d.classList.toggle('done',i<cur);
+    d.classList.toggle('cur',i===cur);
+  });
+  document.getElementById('tpct').textContent=`${cur}/${TOTAL-1}`;
+  document.getElementById('pgline').style.width=`${(cur/(TOTAL-1))*100}%`;
+  document.getElementById('bninfo').textContent=`M1 · ${LABELS[cur]||''}`;
+  document.getElementById('btnprev').disabled=cur===0;
+  document.getElementById('btnnext').disabled=cur===TOTAL-1;
+}
+
+function buildDots(){
+  const w=document.getElementById('tdots');
+  for(let i=0;i<TOTAL;i++){
+    const d=document.createElement('div');
+    d.className='tdot';d.title=`Paso ${i+1}`;
+    d.onclick=()=>go(i);
+    w.appendChild(d);
+  }
+}
+
+/* ══ HOTSPOTS ══ */
+function toggleHS(el){
+  const wasActive=el.classList.contains('active');
+  // close all others in same parent
+  el.closest('[style*="position:absolute"]')?.querySelectorAll('.hs.active')
+    .forEach(h=>h.classList.remove('active'));
+  if(!wasActive) el.classList.add('active');
+}
+// Close hotspots on outside click
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.hs')) document.querySelectorAll('.hs.active').forEach(h=>h.classList.remove('active'));
+});
+
+/* ══ PATTERN CARDS ══ */
+function togglePattern(el){
+  const was=el.classList.contains('selected');
+  document.querySelectorAll('.pattern-card').forEach(c=>c.classList.remove('selected'));
+  if(!was) el.classList.add('selected');
+}
+
+/* ══ CALCULATOR ══ */
+function calcFC(){
+  const sq=parseFloat(document.getElementById('sqInput').value);
+  const r=document.getElementById('calcResult');
+  if(!sq||sq<=0){r.style.display='none';return;}
+  const fc=Math.round(300/sq);
+  let interp='',color='var(--lime)';
+  if(fc<60){interp='⬇ Bradicardia — FC menor a 60 lpm';color='#fbbf24';}
+  else if(fc>100){interp='⬆ Taquicardia — FC mayor a 100 lpm';color='#f87171';}
+  else{interp='✅ Frecuencia normal (60–100 lpm)';}
+  r.style.display='block';
+  r.innerHTML=`<div class="cr-val" style="color:${color}">${fc} lpm</div><div style="margin-top:6px">${interp}</div><div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:4px;font-family:var(--ff-m)">300 ÷ ${sq} cuadrados = ${fc} lpm</div>`;
+}
+
+/* ══ CHECKLIST ══ */
+function doCheck(el){
+  el.classList.toggle('on');
+  el.querySelector('.i-box').textContent=el.classList.contains('on')?'✓':'';
+  const total=document.querySelectorAll('.i-ck').length;
+  const done=document.querySelectorAll('.i-ck.on').length;
+  const pr=document.getElementById('ckprog');
+  if(done===total){
+    pr.innerHTML='<span style="color:var(--teal);font-weight:700">🎉 ¡Checklist completo! Protocolo dominado.</span>';
+  } else {
+    pr.textContent=`Completado: ${done} / ${total}`;
+  }
+}
+
+/* ══ CASES ══ */
+const CANS={c1:1,c2:1};
+const CEXP={
+  c1:`<strong>B es correcta.</strong> ST↑ CONVEXO en DII/DIII/aVF con reciprocidad en DI/aVL = <strong>STEMI Inferior</strong>. En diabética el IAM puede presentarse sin dolor torácico (náuseas + diaforesis = equivalente isquémico). Pedir V4R antes de cualquier nitrato: ST↑ en V4R = VD comprometido → <strong>nitratos contraindicados</strong>.`,
+  c2:`<strong>B es correcta.</strong> P a 80 lpm + QRS a 38 lpm INDEPENDIENTES = <strong>BAV completo (3° grado)</strong>. QRS ancho (0.16s) = bloqueo infranodal → escape ventricular. <strong>Atropina IV 0.5mg primera línea.</strong> En bloqueos infranodales puede ser ineficaz → preparar marcapasos transcutáneo en paralelo.`
+};
+function rc(id,btn,oi){
+  const opts=document.getElementById(id+'opts');
+  if(!opts||opts.querySelector('.disabled'))return;
+  opts.querySelectorAll('.c-opt').forEach((b,i)=>{
+    b.classList.add('disabled');
+    if(i===CANS[id])b.classList.add('correct');
+    else if(i===oi)b.classList.add('wrong');
+  });
+  document.getElementById(id+'exp').innerHTML=`<div class="caso-exp"><span class="ce-tag">💡 Explicación clínica</span>${CEXP[id]}</div>`;
+}
+
+/* ══ QUIZ ══ */
+const QANS=[1,1,1,1,1];
+const qState={ans:{},score:0};
+function rq(qi,btn,oi){
+  if(qState.ans[qi]!==undefined)return;
+  qState.ans[qi]=oi;
+  if(oi===QANS[qi])qState.score++;
+  const item=document.getElementById('qi'+qi);
+  item.querySelectorAll('.q-opt').forEach((b,i)=>{
+    b.classList.add('disabled');
+    if(i===QANS[qi])b.classList.add('correct');
+    else if(i===oi)b.classList.add('wrong');
+  });
+  document.getElementById('qe'+qi).style.display='block';
+  if(Object.keys(qState.ans).length===5)showScore();
+}
+function showScore(){
+  const s=qState.score,pct=Math.round((s/5)*100),passed=pct>=80;
+  const emoji=pct===100?'🏆':pct>=80?'⭐':'📚';
+  document.getElementById('qscore').innerHTML=`
+    <div style="background:var(--ink);border-radius:var(--r2);padding:28px;text-align:center;color:#fff;margin-top:10px">
+      <div style="font-size:32px;margin-bottom:6px">${emoji}</div>
+      <div style="font-family:var(--ff-h);font-size:56px;font-weight:900;color:${passed?'var(--lime)':'var(--red)'};line-height:1;margin-bottom:4px">${pct}%</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:16px">${s}/5 · ${passed?'✅ Aprobado':'❌ Refuerza el contenido'}</div>
+      <button class="btn-lime" onclick="go(9)">Ver cierre →</button>
+      <button class="btn-n btn-prev" onclick="location.reload()" style="margin-left:8px;color:#fff;border-color:rgba(255,255,255,.25)">🔄 Repetir</button>
+    </div>`;
+  document.getElementById('fnum').textContent=pct+'%';
+  document.getElementById('fnum').style.color=passed?'var(--lime)':'var(--red)';
+  document.getElementById('fsub').textContent=passed?'¡Módulo 1 aprobado!':'Repasa y vuelve a intentarlo';
+  document.getElementById('fmsg').textContent=`Respondiste ${s} de 5 correctamente.`;
+  document.getElementById('fbadges').innerHTML=`
+    ${passed?'<span class="chip ch-lime">✅ Aprobado</span>':'<span class="chip ch-red">❌ No aprobado</span>'}
+    <span class="chip ch-blue">${s}/5</span>
+    ${pct===100?'<span class="chip ch-amber">🏆 Perfecto</span>':''}`;
+  document.getElementById('fbutton').textContent='Ver cierre →';
+  document.getElementById('fbutton').onclick=()=>go(9);
+}
+
+/* ══ AI ECG ANALYZER ══ */
+let uploadedB64=null, uploadedMime=null;
+
+function handleFile(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const dataUrl=ev.target.result;
+    uploadedMime=file.type||'image/jpeg';
+    uploadedB64=dataUrl.split(',')[1];
+    const img=document.getElementById('previewImg');
+    img.src=dataUrl;
+    img.onload=()=>{
+      const c=document.getElementById('annotCanvas');
+      c.width=img.naturalWidth; c.height=img.naturalHeight;
+      const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
+    };
+    document.getElementById('uploadZone').style.display='none';
+    document.getElementById('previewZone').style.display='block';
+    document.getElementById('demoHint').style.display='none';
+    document.getElementById('analysisPanel').style.display='none';
+    document.getElementById('annotLegend').style.display='none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetTool(){
+  uploadedB64=null; uploadedMime=null;
+  document.getElementById('fileInput').value='';
+  document.getElementById('previewZone').style.display='none';
+  document.getElementById('analysisPanel').style.display='none';
+  document.getElementById('uploadZone').style.display='block';
+  document.getElementById('demoHint').style.display='block';
+  document.getElementById('annotLegend').style.display='none';
+  const c=document.getElementById('annotCanvas');
+  if(c){ const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); }
+}
+
+/* ── CANVAS ANNOTATIONS ─────────────────────── */
+function drawAnnotations(parsed){
+  const img=document.getElementById('previewImg');
+  const c=document.getElementById('annotCanvas');
+  const W=img.naturalWidth, H=img.naturalHeight;
+  c.width=W; c.height=H;
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  const peaks=parsed.r_peaks||[];
+  const sqCount=parsed.cuadrados_grandes||parsed.n_cuadrados||0;
+
+  if(peaks.length<2){ drawSimpleAnnotation(ctx,W,H,parsed); return; }
+
+  const p1x=Math.round(peaks[0].x*W/100);
+  const p1y=Math.round(peaks[0].y*H/100);
+  const p2x=Math.round(peaks[1].x*W/100);
+  const p2y=Math.round(peaks[1].y*H/100);
+  const midY=Math.min(p1y,p2y)-H*0.08;
+  const arrowY=Math.max(20, midY);
+
+  // ── Shadow glow base ──
+  const grd=ctx.createLinearGradient(p1x,0,p2x,0);
+  grd.addColorStop(0,'rgba(77,255,184,0)');
+  grd.addColorStop(0.5,'rgba(77,255,184,0.08)');
+  grd.addColorStop(1,'rgba(77,255,184,0)');
+  ctx.fillStyle=grd;
+  ctx.fillRect(Math.min(p1x,p2x),0,Math.abs(p2x-p1x),H);
+
+  // ── Vertical dashed lines at peaks ──
+  ctx.setLineDash([8,6]);
+  ctx.lineWidth=2;
+  ctx.strokeStyle='rgba(255,77,77,0.7)';
+  [p1x,p2x].forEach(px=>{
+    ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,H); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  // ── R–R bracket arrow ──
+  ctx.lineWidth=3;
+  ctx.strokeStyle='#ffd700';
+  ctx.fillStyle='#ffd700';
+  ctx.font=`bold ${Math.max(14,W*0.022)}px DM Mono, monospace`;
+
+  // horizontal line
+  ctx.beginPath(); ctx.moveTo(p1x+4, arrowY); ctx.lineTo(p2x-4, arrowY); ctx.stroke();
+  // left arrowhead
+  ctx.beginPath();
+  ctx.moveTo(p1x,arrowY); ctx.lineTo(p1x+12,arrowY-7); ctx.lineTo(p1x+12,arrowY+7);
+  ctx.closePath(); ctx.fill();
+  // right arrowhead
+  ctx.beginPath();
+  ctx.moveTo(p2x,arrowY); ctx.lineTo(p2x-12,arrowY-7); ctx.lineTo(p2x-12,arrowY+7);
+  ctx.closePath(); ctx.fill();
+
+  // ── Squares label on bracket ──
+  if(sqCount>0){
+    const sqLabel=`${sqCount} □ grandes`;
+    const txtW=ctx.measureText(sqLabel).width;
+    const midX=(p1x+p2x)/2;
+    ctx.fillStyle='rgba(0,0,0,0.65)';
+    ctx.beginPath();
+    ctx.roundRect(midX-txtW/2-8, arrowY-28, txtW+16, 22, 6);
+    ctx.fill();
+    ctx.fillStyle='#ffd700';
+    ctx.textAlign='center';
+    ctx.fillText(sqLabel, midX, arrowY-12);
+  }
+
+  // ── Red dots at R peaks ──
+  ctx.shadowColor='rgba(255,77,77,0.8)';
+  ctx.shadowBlur=14;
+  [peaks[0],peaks[1]].forEach(pk=>{
+    const px=pk.x*W/100, py=pk.y*H/100;
+    ctx.beginPath();
+    ctx.arc(px, py, Math.max(10,W*0.015), 0, Math.PI*2);
+    ctx.fillStyle='rgba(255,77,77,0.25)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(px, py, Math.max(5,W*0.008), 0, Math.PI*2);
+    ctx.fillStyle='#ff4d4d';
+    ctx.fill();
+  });
+  ctx.shadowBlur=0;
+
+  // Label R peaks
+  ctx.font=`bold ${Math.max(13,W*0.02)}px DM Mono, monospace`;
+  ctx.fillStyle='#ff4d4d';
+  ctx.textAlign='center';
+  ['R₁','R₂'].forEach((lbl,i)=>{
+    const pk=peaks[i];
+    const px=pk.x*W/100;
+    const py=pk.y*H/100;
+    // pill bg
+    const lw=ctx.measureText(lbl).width+14;
+    ctx.fillStyle='rgba(0,0,0,.6)';
+    ctx.beginPath();
+    ctx.roundRect(px-lw/2, py+Math.max(8,H*0.02), lw, Math.max(18,H*0.026), 4);
+    ctx.fill();
+    ctx.fillStyle='#ff4d4d';
+    ctx.fillText(lbl, px, py+Math.max(22,H*0.042));
+  });
+
+  // ── FC calculation box (bottom-right) ──
+  if(parsed.fc_valor){
+    const fc=parsed.fc_valor;
+    const boxW=Math.max(180,W*0.28), boxH=Math.max(68,H*0.14);
+    const bx=W-boxW-12, by=H-boxH-12;
+    ctx.fillStyle='rgba(10,14,36,0.88)';
+    ctx.strokeStyle='rgba(77,255,184,0.5)';
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.roundRect(bx,by,boxW,boxH,10); ctx.fill(); ctx.stroke();
+
+    ctx.textAlign='left';
+    ctx.font=`${Math.max(10,W*0.016)}px DM Mono, monospace`;
+    ctx.fillStyle='rgba(77,255,184,0.7)';
+    ctx.fillText('300 ÷ '+sqCount+' □ grandes =', bx+12, by+Math.max(22,boxH*0.34));
+    ctx.font=`bold ${Math.max(20,W*0.035)}px Fraunces, serif`;
+    ctx.fillStyle='#b8e000';
+    ctx.fillText(fc+' lpm', bx+12, by+Math.max(52,boxH*0.78));
+  }
+
+  document.getElementById('annotLegend').style.display='block';
+}
+
+function drawSimpleAnnotation(ctx,W,H,parsed){
+  // Fallback when no coordinates: just overlay the FC result
+  if(!parsed.fc_valor) return;
+  const sqCount=parsed.cuadrados_grandes||parsed.n_cuadrados||'?';
+  const boxW=220, boxH=72;
+  const bx=W/2-boxW/2, by=H-boxH-16;
+  ctx.fillStyle='rgba(10,14,36,0.88)';
+  ctx.strokeStyle='rgba(77,255,184,0.5)';
+  ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(bx,by,boxW,boxH,10); ctx.fill(); ctx.stroke();
+  ctx.font=`bold 14px DM Mono, monospace`;
+  ctx.fillStyle='rgba(77,255,184,0.7)';
+  ctx.textAlign='center';
+  ctx.fillText('FC calculada por IA', W/2, by+22);
+  ctx.font=`bold 28px Fraunces, serif`;
+  ctx.fillStyle='#b8e000';
+  ctx.fillText(parsed.fc_valor+' lpm', W/2, by+56);
+  document.getElementById('annotLegend').style.display='block';
+}
+
+
+/* roundRect polyfill for Safari */
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    r=Math.min(r,w/2,h/2);
+    this.beginPath();
+    this.moveTo(x+r,y);
+    this.lineTo(x+w-r,y);
+    this.arcTo(x+w,y,x+w,y+r,r);
+    this.lineTo(x+w,y+h-r);
+    this.arcTo(x+w,y+h,x+w-r,y+h,r);
+    this.lineTo(x+r,y+h);
+    this.arcTo(x,y+h,x,y+h-r,r);
+    this.lineTo(x,y+r);
+    this.arcTo(x,y,x+r,y,r);
+    this.closePath();
+    return this;
+  };
+}
+
+async function analyzeECG(){
+  if(!uploadedB64){alert('Sube una imagen primero');return;}
+  const panel=document.getElementById('analysisPanel');
+  const loading=document.getElementById('apLoading');
+  const results=document.getElementById('apResults');
+  const errorDiv=document.getElementById('apError');
+
+  panel.style.display='block';
+  loading.style.display='block';
+  results.style.display='none';
+  results.classList.remove('show');
+  errorDiv.style.display='none';
+  document.getElementById('analyzeBtn').disabled=true;
+
+  const msgs=['Detectando picos R en el trazado…','Midiendo distancia R–R…','Contando cuadrados grandes…','Calculando FC con método 300÷N…','Analizando ritmo y morfología del QRS…','Evaluando segmento ST y onda T…'];
+  let mi=0;
+  const iv=setInterval(()=>{document.getElementById('loadingText').textContent=msgs[mi%msgs.length];mi++;},1600);
+
+  const prompt=`Eres un analizador de ECG educativo para profesionales de salud. Analiza esta imagen de electrocardiograma y devuelve ÚNICAMENTE un JSON con esta estructura exacta (sin texto adicional, sin markdown):
+{
+  "fc_valor": número entero en lpm (o null si no puedes determinarlo con certeza),
+  "n_cuadrados": número de cuadrados grandes del papel ECG que hay entre los dos picos R consecutivos más claros (número entero, o null),
+  "formula_aplicada": texto como "300 ÷ 4 cuadrados grandes = 75 lpm",
+  "r_peaks": array con exactamente 2 objetos representando los 2 picos R usados para la medición:
+    [{"x": porcentaje horizontal 0-100 respecto al ancho de imagen, "y": porcentaje vertical 0-100 respecto al alto},
+     {"x": porcentaje, "y": porcentaje}]
+    Si no puedes determinar posiciones con confianza, devuelve r_peaks como array vacío [].
+  "cuadrados_grandes": mismo valor que n_cuadrados (campo duplicado para compatibilidad),
+  "ritmo": texto (ej: "Ritmo sinusal", "Fibrilación auricular", "Flutter auricular", "BAV completo", "Taquicardia ventricular", "Desconocido"),
+  "qrs_ancho": true si QRS parece >=3 cuadraditos pequeños (>0.12s), false si estrecho,
+  "st_alterado": true si hay elevación o depresión visible del ST,
+  "st_descripcion": descripción breve del ST o null,
+  "hallazgos": array de strings con máximo 4 hallazgos clínicos breves y relevantes,
+  "urgente": true si hay algo potencialmente urgente,
+  "urgencia_razon": texto breve o null
+}
+IMPORTANTE sobre r_peaks: estima la posición del punto MÁS ALTO de cada pico R como porcentaje del tamaño total de la imagen. Por ejemplo, si el primer pico R está a un 20% desde la izquierda y a un 25% desde arriba, devuelve {"x":20,"y":25}. Usa los dos picos R consecutivos MÁS VISIBLES Y CLAROS del trazado.
+Si la imagen no muestra un ECG reconocible, devuelve {"error":"descripción del problema"}.`;
+
+  try{
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:800,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:uploadedMime,data:uploadedB64}},
+            {type:'text',text:prompt}
+          ]
+        }]
+      })
+    });
+
+    clearInterval(iv);
+
+    if(!response.ok){
+      const ed=await response.json().catch(()=>({}));
+      throw new Error(ed.error?.message||`Error HTTP ${response.status}`);
+    }
+
+    const data=await response.json();
+    const raw=data.content.map(c=>c.text||'').join('').trim();
+    const clean=raw.replace(/```json|```/g,'').trim();
+
+    let parsed;
+    try{parsed=JSON.parse(clean);}
+    catch(e){throw new Error('Respuesta del análisis no reconocida. Intenta con otra imagen.');}
+
+    if(parsed.error){
+      errorDiv.style.display='block';
+      document.getElementById('apErrorText').innerHTML=`<div style="margin-bottom:6px">${parsed.error}</div><div style="font-size:10px;opacity:.6">Prueba con una imagen más clara y bien encuadrada.</div>`;
+      loading.style.display='none';
+      document.getElementById('analyzeBtn').disabled=false;
+      return;
+    }
+
+    loading.style.display='none';
+
+    // ── Draw on canvas ──
+    drawAnnotations(parsed);
+
+    // ── Step-by-step calculation ──
+    const stepsDiv=document.getElementById('calcSteps');
+    const stepsWrap=document.getElementById('stepsWrap');
+    if(parsed.fc_valor||parsed.n_cuadrados){
+      stepsDiv.style.display='block';
+      const sq=parsed.n_cuadrados||parsed.cuadrados_grandes||'?';
+      const fc=parsed.fc_valor||'?';
+      stepsWrap.innerHTML=`
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:10px 14px;">
+            <div style="width:24px;height:24px;border-radius:50%;background:rgba(255,77,77,.3);border:1.5px solid #ff4d4d;display:flex;align-items:center;justify-content:center;font-family:var(--ff-m);font-size:10px;color:#ff4d4d;flex-shrink:0">1</div>
+            <div style="font-size:12px;line-height:1.5;color:rgba(255,255,255,.75)">
+              Se detectaron <strong style="color:#ff4d4d">2 picos R</strong> consecutivos en el trazado (marcados en la imagen)
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:10px 14px;">
+            <div style="width:24px;height:24px;border-radius:50%;background:rgba(255,215,0,.2);border:1.5px solid #ffd700;display:flex;align-items:center;justify-content:center;font-family:var(--ff-m);font-size:10px;color:#ffd700;flex-shrink:0">2</div>
+            <div style="font-size:12px;line-height:1.5;color:rgba(255,255,255,.75)">
+              Distancia R–R = <strong style="color:#ffd700">${sq} cuadrados grandes</strong> del papel ECG (flecha dorada en imagen)
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:10px 14px;">
+            <div style="width:24px;height:24px;border-radius:50%;background:rgba(184,224,0,.2);border:1.5px solid #b8e000;display:flex;align-items:center;justify-content:center;font-family:var(--ff-m);font-size:10px;color:#b8e000;flex-shrink:0">3</div>
+            <div style="font-size:12px;line-height:1.5;color:rgba(255,255,255,.75)">
+              Aplicar fórmula: <strong style="color:#b8e000">300 ÷ ${sq} = ${fc} lpm</strong>
+              ${parsed.formula_aplicada?`<br><span style="font-family:var(--ff-m);font-size:10px;color:rgba(255,255,255,.4)">${parsed.formula_aplicada}</span>`:''}
+            </div>
+          </div>
+          ${sq==='?'?'':'<div style="background:rgba(184,224,0,.06);border:1px solid rgba(184,224,0,.2);border-radius:8px;padding:10px 14px;font-family:var(--ff-m);font-size:11px;color:rgba(184,224,0,.7);text-align:center;">Secuencia mágica: 1□→300 · 2□→150 · 3□→100 · 4□→75 · 5□→60 · 6□→50</div>'}
+        </div>`;
+    }
+
+    // ── FC display ──
+    const fcNum=document.getElementById('fcNum');
+    if(parsed.fc_valor){
+      fcNum.textContent=parsed.fc_valor;
+      fcNum.style.fontSize='';
+      const interpEl=document.getElementById('fcInterp');
+      let cls='normal',txt='Frecuencia Normal (60–100 lpm)';
+      if(parsed.fc_valor<60){cls='bradi';txt='⬇ Bradicardia — FC menor a 60 lpm';}
+      else if(parsed.fc_valor>100){cls='taqui';txt='⬆ Taquicardia — FC mayor a 100 lpm';}
+      interpEl.innerHTML=`<div class="fc-interp ${cls}">${txt}</div>`;
+    } else {
+      fcNum.textContent='—';
+      fcNum.style.fontSize='40px';
+      document.getElementById('fcInterp').innerHTML='<div style="font-family:var(--ff-m);font-size:11px;color:rgba(255,255,255,.4)">No fue posible calcular con precisión</div>';
+    }
+
+    // ── Findings ──
+    const findingsEl=document.getElementById('apFindings');
+    findingsEl.innerHTML='';
+    const fixed=[
+      {label:`Ritmo: <strong>${parsed.ritmo||'No determinado'}</strong>`,
+       type:(parsed.ritmo||'').toLowerCase().includes('sinusal')?'ok':'warn'},
+      {label:`QRS: ${parsed.qrs_ancho?'<strong>ANCHO</strong> — posible bloqueo de rama':'<strong>Estrecho</strong> (normal &lt;0.12s)'}`,
+       type:parsed.qrs_ancho?'warn':'ok'},
+      {label:`Segmento ST: ${parsed.st_alterado?`<strong>ALTERADO</strong> — ${parsed.st_descripcion||'revisar'}`:  '<strong>Isoeléctrico</strong> (normal)'}`,
+       type:parsed.st_alterado?'alert':'ok'},
+    ];
+    [...fixed,...(parsed.hallazgos||[]).map(h=>({label:h,type:'ok'}))].forEach(f=>{
+      findingsEl.innerHTML+=`
+        <div class="ap-finding">
+          <div class="ap-find-dot ${f.type}"></div>
+          <div class="ap-find-text">${f.label}</div>
+        </div>`;
+    });
+
+    // ── Urgent alert ──
+    const alertEl=document.getElementById('apAlert');
+    if(parsed.urgente&&parsed.urgencia_razon){
+      alertEl.style.display='block';
+      alertEl.className='ap-alert';
+      alertEl.innerHTML=`<strong>🚨 Posible hallazgo urgente:</strong> ${parsed.urgencia_razon}`;
+    } else {
+      alertEl.style.display='none';
+    }
+
+    results.style.display='block';
+    setTimeout(()=>results.classList.add('show'),50);
+
+  } catch(err){
+    clearInterval(iv);
+    loading.style.display='none';
+    errorDiv.style.display='block';
+    document.getElementById('apErrorText').innerHTML=`
+      <div style="margin-bottom:6px">No se pudo completar el análisis</div>
+      <div style="font-size:10px;opacity:.7">${err.message}</div>
+      <div style="font-size:10px;opacity:.5;margin-top:4px">Verifica tu conexión o intenta con otra imagen.</div>`;
+  }
+
+  document.getElementById('analyzeBtn').disabled=false;
+}
+
+
+// Drag & drop
+const uz=document.getElementById('uploadZone');
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('dragover');});
+uz.addEventListener('dragleave',()=>uz.classList.remove('dragover'));
+uz.addEventListener('drop',e=>{
+  e.preventDefault();uz.classList.remove('dragover');
+  const file=e.dataTransfer?.files[0];
+  if(file&&file.type.startsWith('image/')){
+    const dt=new DataTransfer();dt.items.add(file);
+    document.getElementById('fileInput').files=dt.files;
+    handleFile({target:{files:[file]}});
+  }
+});
+
+/* INIT */
+buildDots();
+updateUI();
+</script>
+</body>
+</html>
