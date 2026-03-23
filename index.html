@@ -552,6 +552,22 @@ hr{border:none;border-top:1.5px solid var(--rule);margin:22px 0;}
   .ai-tool-body{padding:14px 16px;}
   .upload-zone{padding:20px 14px;}
 }
+
+/* ── TERRITORY SELECTOR ── */
+.terr-btn{
+  font-family:var(--ff-b);font-size:13px;font-weight:700;
+  padding:10px 8px;border-radius:var(--r);border:2px solid;
+  background:var(--paper2);cursor:pointer;transition:all .2s;
+  text-align:center;
+}
+.terr-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.12);}
+.terr-btn.active{color:#fff!important;box-shadow:0 4px 12px rgba(0,0,0,.2);}
+.terr-btn[data-t="inferior"].active{background:#d93a27;border-color:#d93a27;}
+.terr-btn[data-t="anterior"].active{background:#1045c8;border-color:#1045c8;}
+.terr-btn[data-t="anteroseptal"].active{background:#7c3aed;border-color:#7c3aed;}
+.terr-btn[data-t="lateral_alta"].active{background:#16a34a;border-color:#16a34a;}
+.terr-btn[data-t="lateral_baja"].active{background:#0a9080;border-color:#0a9080;}
+.terr-btn[data-t="posterior"].active{background:#d97706;border-color:#d97706;}
 </style>
 </head>
 <body>
@@ -1322,8 +1338,234 @@ hr{border:none;border-top:1.5px solid var(--rule);margin:22px 0;}
   </div>
 </section>
 
-<!-- ══════ SLIDE 4 · ATLAS DE PATRONES URGENTES ══════ -->
+<!-- ══════ SLIDE 5 · LOCALIZACIÓN ANATÓMICA INTERACTIVA ══════ -->
 <section class="slide" data-s="4">
+  <div class="step-header">
+    <div class="sh-num">04</div>
+    <div class="sh-body">
+      <span class="sh-tag">Objetivo 4 · Anatomía coronaria</span>
+      <div class="sh-title">¿Qué zona del corazón está en riesgo? Selecciona el territorio</div>
+    </div>
+    <div class="sh-obj">Obj. 4 ✓</div>
+  </div>
+
+  <p class="lead" style="margin-bottom:14px">
+    Selecciona el territorio ECG afectado y el diagrama mostrará las <strong>derivaciones comprometidas</strong>,
+    la <strong>arteria culpable</strong> y la <strong>zona anatómica del ventrículo</strong>.
+  </p>
+
+  <!-- SELECTOR DE TERRITORIO -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;" id="terrBtns">
+    <button class="terr-btn" data-t="inferior"    onclick="selectTerr('inferior')"   style="border-color:#d93a27;color:#d93a27">🔴 Inferior</button>
+    <button class="terr-btn" data-t="anterior"    onclick="selectTerr('anterior')"   style="border-color:#1045c8;color:#1045c8">🔵 Anterior</button>
+    <button class="terr-btn" data-t="anteroseptal"onclick="selectTerr('anteroseptal')"style="border-color:#7c3aed;color:#7c3aed">🟣 Anteroseptal</button>
+    <button class="terr-btn" data-t="lateral_alta"onclick="selectTerr('lateral_alta')"style="border-color:#16a34a;color:#16a34a">🟢 Lateral alta</button>
+    <button class="terr-btn" data-t="lateral_baja"onclick="selectTerr('lateral_baja')"style="border-color:#0a9080;color:#0a9080">🟦 Lateral baja</button>
+    <button class="terr-btn" data-t="posterior"   onclick="selectTerr('posterior')"  style="border-color:#d97706;color:#d97706">🟡 Posterior</button>
+  </div>
+
+  <!-- LAYOUT: corazón + info -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+
+    <!-- CORAZÓN INTERACTIVO SVG -->
+    <div>
+      <div style="font-family:var(--ff-m);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2);margin-bottom:6px;text-align:center;">
+        Vista Anterior del Ventrículo Izquierdo
+      </div>
+      <div style="background:var(--paper2);border:1.5px solid var(--ink3);border-radius:var(--r2);padding:12px;position:relative;">
+        <svg id="heartSVG" viewBox="0 0 300 300" width="100%" style="display:block;">
+
+          <!-- FONDO del corazón -->
+          <defs>
+            <radialGradient id="hrtBg" cx="50%" cy="55%" r="50%">
+              <stop offset="0%" stop-color="#f9e8e8"/>
+              <stop offset="100%" stop-color="#f0d0d0"/>
+            </radialGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+
+          <!-- Silueta corazón completo -->
+          <ellipse cx="150" cy="160" rx="110" ry="115" fill="url(#hrtBg)" stroke="#c99" stroke-width="1.5"/>
+
+          <!-- ZONA INFERIOR (DII/DIII/aVF) - base inferior -->
+          <path id="z-inferior" d="M90,230 Q150,290 210,230 Q200,260 150,280 Q100,260 90,230Z"
+                fill="rgba(217,58,39,.15)" stroke="rgba(217,58,39,.3)" stroke-width="1.5" style="cursor:pointer;transition:all .3s"/>
+
+          <!-- ZONA ANTERIOR (V3-V4) - pared anterior media -->
+          <path id="z-anterior" d="M80,130 Q90,100 130,90 L170,90 Q210,100 220,130 Q200,120 150,118 Q100,120 80,130Z"
+                fill="rgba(16,69,200,.12)" stroke="rgba(16,69,200,.25)" stroke-width="1.5" style="cursor:pointer;transition:all .3s"/>
+
+          <!-- ZONA ANTEROSEPTAL (V1-V2) - tabique anterior -->
+          <path id="z-anteroseptal" d="M140,90 L160,90 Q175,110 175,145 Q165,140 150,140 Q135,140 125,145 Q125,110 140,90Z"
+                fill="rgba(124,58,237,.15)" stroke="rgba(124,58,237,.3)" stroke-width="1.5" style="cursor:pointer;transition:all .3s"/>
+
+          <!-- ZONA LATERAL ALTA (DI/aVL) - pared lateral alta -->
+          <path id="z-lateral_alta" d="M220,130 Q235,155 230,190 Q215,175 210,155 Q215,140 220,130Z"
+                fill="rgba(22,163,74,.15)" stroke="rgba(22,163,74,.3)" stroke-width="1.5" style="cursor:pointer;transition:all .3s"/>
+
+          <!-- ZONA LATERAL BAJA (V5-V6) - pared lateral baja -->
+          <path id="z-lateral_baja" d="M210,155 Q215,175 210,200 Q195,215 185,225 Q175,210 180,185 Q195,175 210,155Z"
+                fill="rgba(10,144,128,.15)" stroke="rgba(10,144,128,.3)" stroke-width="1.5" style="cursor:pointer;transition:all .3s"/>
+
+          <!-- ZONA POSTERIOR (V1-V3 imagen espejo) -->
+          <path id="z-posterior" d="M80,130 Q70,155 75,190 Q85,175 90,155 Q85,140 80,130Z"
+                fill="rgba(217,119,6,.15)" stroke="rgba(217,119,6,.3)" stroke-width="1.5" style="cursor:pointer;transition:all .3s"/>
+
+          <!-- ARTERIAS CORONARIAS -->
+          <!-- DA - Descendente Anterior (baja por el tabique) -->
+          <path id="art-DA" d="M150,75 Q152,100 150,140 Q149,170 148,210"
+                fill="none" stroke="#cc2200" stroke-width="2.5" stroke-linecap="round" opacity="0.4"
+                style="transition:all .3s"/>
+          <!-- Ramas diagonales de DA -->
+          <path id="art-DA-r" d="M152,110 Q175,125 185,140 M150,130 Q170,145 182,160"
+                fill="none" stroke="#cc2200" stroke-width="1.5" opacity="0.3" style="transition:all .3s"/>
+
+          <!-- CX - Circunfleja (lateral izquierdo) -->
+          <path id="art-CX" d="M150,75 Q185,82 215,110 Q230,135 225,170 Q215,195 200,215"
+                fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" opacity="0.4"
+                style="transition:all .3s"/>
+
+          <!-- ACD - Arteria Coronaria Derecha (lateral derecho → inferior) -->
+          <path id="art-ACD" d="M150,75 Q115,82 88,110 Q72,135 75,170 Q85,200 105,225 Q130,250 150,258"
+                fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" opacity="0.4"
+                style="transition:all .3s"/>
+          <!-- Descendente posterior de ACD -->
+          <path id="art-ACD-r" d="M110,230 Q130,255 150,258 Q170,255 190,235"
+                fill="none" stroke="#d97706" stroke-width="1.5" opacity="0.3" style="transition:all .3s"/>
+
+          <!-- ETIQUETAS ESTÁTICAS de derivaciones precordiales -->
+          <g font-family="DM Mono,monospace" font-size="9" fill="rgba(17,19,24,.35)">
+            <text x="148" y="50">V1-V2</text>
+            <text x="80"  y="100">V3-V4</text>
+            <text x="200" y="100">V5-V6</text>
+            <text x="225" y="165">V5</text>
+            <text x="56"  y="165">V6?</text>
+            <text x="120" y="278">Inf</text>
+          </g>
+
+          <!-- ELECTRODOS posición -->
+          <g fill="#888" font-family="DM Mono,monospace" font-size="8">
+            <circle cx="150" cy="62" r="4" fill="#1045c8" opacity=".5"/>
+            <text x="155" y="61" fill="#1045c8">V1-V2</text>
+            <circle cx="108" cy="95" r="4" fill="#1045c8" opacity=".5"/>
+            <text x="90" y="90" fill="#1045c8" font-size="7">V3-V4</text>
+            <circle cx="215" cy="148" r="4" fill="#16a34a" opacity=".5"/>
+            <text x="218" y="148" fill="#16a34a" font-size="7">V5-V6</text>
+          </g>
+
+          <!-- LEYENDA arterias -->
+          <g font-family="DM Mono,monospace" font-size="8">
+            <line x1="14" y1="260" x2="28" y2="260" stroke="#cc2200" stroke-width="2.5"/>
+            <text x="30" y="263" fill="#cc2200">DA</text>
+            <line x1="14" y1="272" x2="28" y2="272" stroke="#16a34a" stroke-width="2.5"/>
+            <text x="30" y="275" fill="#16a34a">CX</text>
+            <line x1="14" y1="284" x2="28" y2="284" stroke="#d97706" stroke-width="2.5"/>
+            <text x="30" y="287" fill="#d97706">ACD</text>
+          </g>
+
+          <!-- INDICADOR central -->
+          <text id="heartLabel" x="150" y="165" text-anchor="middle"
+                font-family="Fraunces,serif" font-size="13" font-weight="700"
+                fill="rgba(17,19,24,.2)">← Selecciona</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- PANEL DE INFORMACIÓN -->
+    <div id="terrInfo" style="display:flex;flex-direction:column;gap:10px;">
+      <!-- Estado vacío -->
+      <div id="terrEmpty" style="background:var(--paper2);border:1.5px dashed var(--ink3);border-radius:var(--r2);padding:28px 20px;text-align:center;color:var(--ink2);">
+        <div style="font-size:32px;margin-bottom:8px">🫀</div>
+        <div style="font-size:13px;line-height:1.6">Selecciona un territorio<br>en los botones de arriba</div>
+      </div>
+
+      <!-- Contenido dinámico -->
+      <div id="terrContent" style="display:none;animation:sIn .3s ease;">
+
+        <!-- Nombre territorio -->
+        <div id="tNombre" style="font-family:var(--ff-h);font-size:20px;font-weight:900;margin-bottom:10px;line-height:1.2;"></div>
+
+        <!-- Derivaciones afectadas -->
+        <div style="margin-bottom:10px;">
+          <div style="font-family:var(--ff-m);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2);margin-bottom:6px;">Derivaciones afectadas</div>
+          <div id="tDerivs" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        </div>
+
+        <!-- Arteria culpable -->
+        <div style="margin-bottom:10px;">
+          <div style="font-family:var(--ff-m);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2);margin-bottom:6px;">Arteria culpable</div>
+          <div id="tArteria" style="background:var(--paper);border-radius:var(--r);padding:10px 14px;font-size:13px;border-left:4px solid #888;line-height:1.6;"></div>
+        </div>
+
+        <!-- Reciprocidad -->
+        <div style="margin-bottom:10px;" id="tRecipWrap">
+          <div style="font-family:var(--ff-m);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2);margin-bottom:6px;">Cambios recíprocos (imagen en espejo)</div>
+          <div id="tRecip" style="background:var(--paper);border-radius:var(--r);padding:10px 14px;font-size:12px;line-height:1.6;color:var(--ink2);"></div>
+        </div>
+
+        <!-- Alerta clínica -->
+        <div id="tAlerta" style="border-radius:var(--r);padding:11px 14px;font-size:12px;line-height:1.7;"></div>
+
+        <!-- Perla -->
+        <div id="tPerla" style="background:var(--ink);color:#fff;border-radius:var(--r2);padding:13px 16px;margin-top:8px;display:flex;gap:10px;align-items:flex-start;">
+          <div style="font-size:18px;flex-shrink:0">💎</div>
+          <div>
+            <div style="font-family:var(--ff-m);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--lime);margin-bottom:3px;">Perla clínica</div>
+            <div id="tPerlaText" style="font-size:12px;line-height:1.7;color:rgba(255,255,255,.8);"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SISTEMA HEXAXIAL PEQUEÑO -->
+  <div style="margin-top:16px;background:var(--paper2);border:1.5px solid var(--ink3);border-radius:var(--r2);padding:14px;">
+    <div style="font-family:var(--ff-m);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2);margin-bottom:10px;text-align:center;">
+      Sistema Hexaxial — Derivaciones de miembros
+    </div>
+    <svg viewBox="0 0 400 180" width="100%" style="display:block;max-height:140px;">
+      <!-- Ejes -->
+      <g stroke="#ddd" stroke-width="1" stroke-dasharray="4,3">
+        <!-- DI horizontal --><line x1="50" y1="90" x2="350" y2="90"/>
+        <!-- DIII, aVR --><line x1="200" y1="10" x2="200" y2="170"/>
+        <!-- DII, aVL --><line x1="75" y1="22" x2="325" y2="158"/>
+        <!-- aVF, aVR --><line x1="325" y1="22" x2="75" y2="158"/>
+      </g>
+      <!-- Líneas principales con colores -->
+      <g stroke-width="2.5" fill="none">
+        <line id="hex-DI"   x1="50"  y1="90"  x2="350" y2="90"  stroke="#1045c8" opacity=".5"/>
+        <line id="hex-DII"  x1="75"  y1="22"  x2="325" y2="158" stroke="#d93a27" opacity=".5"/>
+        <line id="hex-DIII" x1="325" y1="22"  x2="75"  y2="158" stroke="#16a34a" opacity=".5"/>
+        <line id="hex-aVR"  x1="350" y1="90"  x2="50"  y2="90"  stroke="#888"    opacity=".3"/>
+        <line id="hex-aVL"  x1="325" y1="158" x2="75"  y2="22"  stroke="#888"    opacity=".3"/>
+        <line id="hex-aVF"  x1="200" y1="10"  x2="200" y2="170" stroke="#d97706" opacity=".5"/>
+      </g>
+      <!-- Etiquetas derivaciones -->
+      <g font-family="DM Mono,monospace" font-size="11" font-weight="500">
+        <text id="lbl-DI"    x="355" y="94"  fill="#1045c8">DI (0°)</text>
+        <text id="lbl-aVR"   x="2"   y="94"  fill="#888">aVR (−150°)</text>
+        <text id="lbl-DII"   x="328" y="163" fill="#d93a27">DII (+60°)</text>
+        <text id="lbl-aVL"   x="14"  y="22"  fill="#888">aVL (−30°)</text>
+        <text id="lbl-DIII"  x="2"   y="163" fill="#16a34a">DIII (+120°)</text>
+        <text id="lbl-aVF"   x="165" y="175" fill="#d97706">aVF (+90°)</text>
+      </g>
+      <!-- Punto central -->
+      <circle cx="200" cy="90" r="5" fill="#111"/>
+      <!-- Flecha eje eléctrico (dinámica) -->
+      <line id="hexArrow" x1="200" y1="90" x2="200" y2="90"
+            stroke="var(--red)" stroke-width="3" stroke-linecap="round" opacity="0"/>
+      <circle id="hexDot" cx="200" cy="90" r="6" fill="var(--red)" opacity="0"/>
+    </svg>
+    <div id="hexInfo" style="text-align:center;font-family:var(--ff-m);font-size:10px;color:var(--ink2);margin-top:4px;">
+      El eje apunta hacia las derivaciones con ST↑
+    </div>
+  </div>
+
+</section>
+
+<!-- ══════ SLIDE 4 · ATLAS DE PATRONES URGENTES ══════ -->
+<section class="slide" data-s="5">
   <div class="step-header">
     <div class="sh-num">04</div>
     <div class="sh-body">
@@ -1531,8 +1773,8 @@ hr{border:none;border-top:1.5px solid var(--rule);margin:22px 0;}
   </div>
 </section>
 
-<!-- ══════ SLIDE 5 · IA CALCULA FC ══════ -->
-<section class="slide" data-s="5">
+<!-- ══════ SLIDE 6 · IA CALCULA FC ══════ -->
+<section class="slide" data-s="6">
   <div class="step-header">
     <div class="sh-num">05</div>
     <div class="sh-body">
@@ -1649,8 +1891,8 @@ hr{border:none;border-top:1.5px solid var(--rule);margin:22px 0;}
 </section>
 
 
-<!-- ══════ SLIDE 6 · CHECKLIST ══════ -->
-<section class="slide" data-s="6">
+<!-- ══════ SLIDE 7 · CHECKLIST ══════ -->
+<section class="slide" data-s="7">
   <div class="step-header">
     <div class="sh-num">06</div>
     <div class="sh-body">
@@ -1675,8 +1917,8 @@ hr{border:none;border-top:1.5px solid var(--rule);margin:22px 0;}
   </div>
 </section>
 
-<!-- ══════ SLIDE 7 · CASOS ══════ -->
-<section class="slide" data-s="7">
+<!-- ══════ SLIDE 8 · CASOS ══════ -->
+<section class="slide" data-s="8">
   <div class="step-header">
     <div class="sh-num">07</div>
     <div class="sh-body">
@@ -1728,8 +1970,8 @@ hr{border:none;border-top:1.5px solid var(--rule);margin:22px 0;}
   </div>
 </section>
 
-<!-- ══════ SLIDE 8 · EVALUACIÓN ══════ -->
-<section class="slide" data-s="8">
+<!-- ══════ SLIDE 9 · EVALUACIÓN ══════ -->
+<section class="slide" data-s="9">
   <div class="step-header">
     <div class="sh-num">08</div>
     <div class="sh-body">
@@ -1806,8 +2048,8 @@ hr{border:none;border-top:1.5px solid var(--rule);margin:22px 0;}
   </div>
 </section>
 
-<!-- ══════ SLIDE 9 · CIERRE ══════ -->
-<section class="slide" data-s="9">
+<!-- ══════ SLIDE 10 · CIERRE ══════ -->
+<section class="slide" data-s="10">
   <span class="eyebrow">Módulo 1 completado · 2/20 horas</span>
   <div class="h-big" style="margin-bottom:16px">Dominas las bases del ECG clínico</div>
   <div class="score-box" id="finalScoreBox">
@@ -1852,8 +2094,8 @@ hr{border:none;border-top:1.5px solid var(--rule);margin:22px 0;}
 
 <script>
 /* ══ NAVIGATION ══ */
-const TOTAL=10;
-const LABELS=['Portada','Ondas del ECG','Cálculo FC','Método F·R·E·C','Atlas de Patrones','IA Calcula FC','Checklist','Casos Clínicos','Evaluación','Cierre'];
+const TOTAL=11;
+const LABELS=['Portada','Ondas del ECG','Cálculo FC','Método F·R·E·C','Localización Anatómica','Atlas de Patrones','IA Calcula FC','Checklist','Casos Clínicos','Evaluación','Cierre'];
 let cur=0;
 
 function go(n){
@@ -2392,6 +2634,184 @@ uz.addEventListener('drop',e=>{
 /* INIT */
 buildDots();
 updateUI();
+
+/* ══ TERRITORY SELECTOR ══ */
+const TERR_DATA = {
+  inferior: {
+    nombre: 'Infarto Inferior',
+    color: '#d93a27',
+    derivs: ['DII','DIII','aVF'],
+    arteria: '<strong style="color:#d97706">ACD</strong> — Arteria Coronaria Derecha (80% casos)<br>Rama <strong>Descendente Posterior</strong>',
+    arteriaId: 'ACD',
+    zonaId: 'z-inferior',
+    recip: 'ST↓ en DI y aVL (imagen en espejo de la elevación inferior)',
+    alerta: '🚨 <strong>Siempre pedir V4R:</strong> si ST↑ en V4R → IAM de VD → <strong>nitratos CONTRAINDICADOS</strong>, dar volumen IV',
+    alertaColor: '#d93a27',
+    perla: 'En pacientes diabéticos el IAM inferior puede presentarse solo como epigastralgia + náuseas sin dolor torácico típico.',
+    hexAngulo: 90  // aVF direction
+  },
+  anterior: {
+    nombre: 'Infarto Anterior',
+    color: '#1045c8',
+    derivs: ['V3','V4','V5'],
+    arteria: '<strong style="color:#cc2200">DA</strong> — Descendente Anterior<br>Segmento medio o distal. Afecta pared anterior del VI.',
+    arteriaId: 'DA',
+    zonaId: 'z-anterior',
+    recip: 'ST↓ en DII, DIII, aVF (puede ser leve o ausente)',
+    alerta: '⚠️ DA proximal: también afecta V1-V2 (anteroseptal extenso) con mayor riesgo de bloqueo de rama y disfunción sistólica severa.',
+    alertaColor: '#1045c8',
+    perla: 'El infarto anterior extenso (V1-V6) por DA proximal tiene la mayor mortalidad a 30 días. Tiempo puerta-balón <90 min.',
+    hexAngulo: 0
+  },
+  anteroseptal: {
+    nombre: 'Infarto Anteroseptal',
+    color: '#7c3aed',
+    derivs: ['V1','V2','V3'],
+    arteria: '<strong style="color:#cc2200">DA</strong> — Descendente Anterior, segmento proximal<br>Ramas <strong>septales perforantes</strong>',
+    arteriaId: 'DA',
+    zonaId: 'z-anteroseptal',
+    recip: 'Cambios recíprocos discretos o ausentes en cara inferior',
+    alerta: '⚠️ Alta incidencia de <strong>bloqueo de rama izquierda nuevo</strong> y alteraciones de conducción intraventricular.',
+    alertaColor: '#7c3aed',
+    perla: 'BRI nuevo + síntomas isquémicos = STEMI equivalente. No esperar troponinas para activar el protocolo de reperfusión.',
+    hexAngulo: -60
+  },
+  lateral_alta: {
+    nombre: 'Infarto Lateral Alto',
+    color: '#16a34a',
+    derivs: ['DI','aVL'],
+    arteria: '<strong style="color:#16a34a">CX</strong> — Circunfleja o diagonal de DA<br>Rama <strong>Marginal obtusa</strong> o diagonal',
+    arteriaId: 'CX',
+    zonaId: 'z-lateral_alta',
+    recip: 'ST↓ en DII, DIII, aVF',
+    alerta: '⚠️ El infarto lateral alto aislado (solo DI/aVL) puede ser sutil y pasar desapercibido. Revisar siempre aVL.',
+    alertaColor: '#16a34a',
+    perla: 'Un ST↑ de solo 0.5mm en aVL con síntomas puede ser el único signo de una oclusión de diagonal o marginal.',
+    hexAngulo: -30
+  },
+  lateral_baja: {
+    nombre: 'Infarto Lateral Bajo',
+    color: '#0a9080',
+    derivs: ['V5','V6'],
+    arteria: '<strong style="color:#16a34a">CX</strong> — Circunfleja distal o DA distal<br>Ramas marginales obtusas',
+    arteriaId: 'CX',
+    zonaId: 'z-lateral_baja',
+    recip: 'ST↓ discreto en V1-V2 en algunos casos',
+    alerta: '💡 Habitualmente asociado a infarto anterior extenso o inferior-lateral. Rara vez aislado.',
+    alertaColor: '#0a9080',
+    perla: 'Si V5-V6 con ST↑ y también inferior → evaluar CX dominante que irriga cara lateral e inferior.',
+    hexAngulo: 60
+  },
+  posterior: {
+    nombre: 'Infarto Posterior (Dorsal)',
+    color: '#d97706',
+    derivs: ['V1','V2','V3'],
+    arteria: '<strong style="color:#d97706">ACD</strong> o <strong style="color:#16a34a">CX</strong> dominante<br>Cara posterior del VI (cara dorsal)',
+    arteriaId: 'ACD',
+    zonaId: 'z-posterior',
+    recip: 'ST↓ + onda R alta + T positiva en V1-V3 = IMAGEN EN ESPEJO del ST↑ posterior',
+    alerta: '🔍 <strong>Trampa clásica:</strong> el infarto posterior NO eleva el ST en leads estándar. Se ve como ST↓ en V1-V3. Pedir derivaciones posteriores V7-V8-V9.',
+    alertaColor: '#d97706',
+    perla: 'Si ves ST↓ en V1-V3 con onda R alta y no hay criterios de BRD, gira el ECG: es un STEMI posterior. Pide V7-V9.',
+    hexAngulo: 120
+  }
+};
+
+function selectTerr(t){
+  const d = TERR_DATA[t];
+  if(!d) return;
+
+  // Buttons
+  document.querySelectorAll('.terr-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.t === t);
+  });
+
+  // Reset all heart zones
+  Object.values(TERR_DATA).forEach(td=>{
+    const z = document.getElementById(td.zonaId);
+    if(z){ z.style.opacity='0.5'; z.style.filter='none'; }
+  });
+  // Reset all arteries
+  ['DA','DA-r','CX','ACD','ACD-r'].forEach(a=>{
+    const el = document.getElementById('art-'+a);
+    if(el){ el.style.opacity='0.3'; el.style.strokeWidth='2'; }
+  });
+
+  // Highlight selected zone
+  const zone = document.getElementById(d.zonaId);
+  if(zone){
+    zone.style.opacity='1';
+    zone.style.filter='url(#glow)';
+    const fillMap={
+      inferior:'rgba(217,58,39,.45)',anterior:'rgba(16,69,200,.4)',
+      anteroseptal:'rgba(124,58,237,.45)',lateral_alta:'rgba(22,163,74,.45)',
+      lateral_baja:'rgba(10,144,128,.45)',posterior:'rgba(217,119,6,.45)'
+    };
+    zone.style.fill = fillMap[t]||'rgba(217,58,39,.3)';
+  }
+
+  // Highlight arteries
+  const artMap={DA:['DA','DA-r'],CX:['CX'],ACD:['ACD','ACD-r']};
+  const artIds = artMap[d.arteriaId]||[];
+  artIds.forEach(a=>{
+    const el=document.getElementById('art-'+a);
+    if(el){el.style.opacity='1';el.style.strokeWidth='4';}
+  });
+
+  // Heart label
+  document.getElementById('heartLabel').textContent = d.nombre;
+  document.getElementById('heartLabel').setAttribute('fill', d.color);
+
+  // Hexaxial arrow
+  const ang = (d.hexAngulo * Math.PI)/180;
+  const cx=200, cy=90, r=70;
+  const ex = cx + r*Math.cos(ang);
+  const ey = cy + r*Math.sin(ang);
+  const arrow = document.getElementById('hexArrow');
+  arrow.setAttribute('x2', ex); arrow.setAttribute('y2', ey);
+  arrow.style.stroke = d.color; arrow.style.opacity='1';
+  const dot = document.getElementById('hexDot');
+  dot.setAttribute('cx', ex); dot.setAttribute('cy', ey);
+  dot.style.fill = d.color; dot.style.opacity='1';
+
+  // Highlight hex labels for affected derivations
+  const allHex=['DI','DII','DIII','aVR','aVL','aVF'];
+  allHex.forEach(lbl=>{
+    const el=document.getElementById('lbl-'+lbl);
+    if(el) el.style.fontWeight = d.derivs.includes(lbl)?'900':'400';
+    const line=document.getElementById('hex-'+lbl);
+    if(line) line.style.opacity = d.derivs.includes(lbl)?'1':'0.2';
+  });
+  document.getElementById('hexInfo').innerHTML =
+    `Eje del infarto apunta hacia <strong style="color:${d.color}">${d.derivs.join(' – ')}</strong>`;
+
+  // Panel info
+  document.getElementById('terrEmpty').style.display='none';
+  document.getElementById('terrContent').style.display='block';
+
+  document.getElementById('tNombre').innerHTML =
+    `<span style="color:${d.color}">${d.nombre}</span>`;
+
+  const derivsEl = document.getElementById('tDerivs');
+  derivsEl.innerHTML = d.derivs.map(der=>
+    `<span style="background:${d.color};color:#fff;font-family:var(--ff-m);
+     font-size:11px;padding:4px 10px;border-radius:99px;font-weight:700">${der}</span>`
+  ).join('');
+
+  document.getElementById('tArteria').innerHTML = d.arteria;
+  document.getElementById('tArteria').style.borderLeftColor = d.color;
+
+  document.getElementById('tRecip').textContent = d.recip;
+
+  const alertEl = document.getElementById('tAlerta');
+  alertEl.innerHTML = d.alerta;
+  alertEl.style.background = d.alertaColor+'22';
+  alertEl.style.border = `1.5px solid ${d.alertaColor}55`;
+  alertEl.style.color = 'var(--ink)';
+
+  document.getElementById('tPerlaText').textContent = d.perla;
+}
+
 </script>
 </body>
 </html>
